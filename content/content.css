@@ -1,0 +1,1667 @@
+/* ==========================================================================
+   cerpspy - Streamlined SERP Overlay Stylesheet
+   Modern, native Google design matching light and dark themes.
+   Focuses strictly on:
+   1. Search Bar Intel Strip: Volume, CPC, 12-Month Sparkline & Popover
+   2. SERP Result Badges: DR, DA, Spam Score pills beside domain name
+   ========================================================================== */
+
+:root,
+.cerpspy-theme-light {
+  --cerpspy-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  --cerpspy-bg: #FFFFFF;
+  --cerpspy-card-bg: #FFFFFF;
+  --cerpspy-border: #CBD5E1;
+  --cerpspy-text-primary: #0F172A;   /* Deep solid black for maximum clarity in light mode */
+  --cerpspy-text-secondary: #334155; /* Rich dark slate for labels (Volume:, CPC:, Trend:) */
+  --cerpspy-text-muted: #64748B;     /* Clear slate for separators and hints */
+  --cerpspy-brand-primary: #4032c9;
+  --cerpspy-dr-bg: #4032c9;
+  --cerpspy-da-bg: #4032c9;
+  --cerpspy-spam-clean: #059669;
+  --cerpspy-spam-warn: #D97706;
+  --cerpspy-spam-danger: #DC2626;
+  --cerpspy-sparkline-stroke: #4032c9;
+  --cerpspy-popover-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+}
+
+.cerpspy-theme-dark {
+  --cerpspy-bg: #202124 !important;
+  --cerpspy-card-bg: #303134 !important;
+  --cerpspy-border: #3C4043 !important;
+  --cerpspy-text-primary: #E8EAED !important;
+  --cerpspy-text-secondary: #9AA0A6 !important;
+  --cerpspy-text-muted: #80868B !important;
+  --cerpspy-brand-primary: #4032c9 !important;
+  --cerpspy-dr-bg: #4032c9 !important;
+  --cerpspy-da-bg: #4032c9 !important;
+  --cerpspy-spam-clean: #059669 !important;
+  --cerpspy-spam-warn: #D97706 !important;
+  --cerpspy-spam-danger: #DC2626 !important;
+  --cerpspy-sparkline-stroke: #4032c9 !important;
+  --cerpspy-popover-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6) !important;
+}
+
+/* ==========================================================================
+   1. TOP SEARCH BAR INTEL STRIP (Seamless Native Layout)
+   ========================================================================== */
+
+.cerpspy-kw-strip {
+  display: inline-flex !important;
+  visibility: visible !important;
+  opacity: 1;
+  transition: opacity 0.15s ease;
+  align-items: center !important;
+  flex-wrap: nowrap !important;
+  gap: 5px !important;
+  padding: 0 !important;
+  margin: 6px 0 6px 0 !important;
+  height: auto !important;
+  min-height: 22px !important;
+  max-width: 684px !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+  font-family: var(--cerpspy-font) !important;
+  font-size: 11.5px !important;
+  line-height: 20px !important;
+  color: var(--cerpspy-text-secondary) !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  position: relative !important;
+  z-index: 50 !important;
+  clear: both !important;
+  white-space: nowrap !important;
+}
+
+.cerpspy-kw-item {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  white-space: nowrap !important;
+}
+
+.cerpspy-kw-lbl {
+  color: var(--cerpspy-text-secondary) !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+}
+
+.cerpspy-kw-val {
+  color: var(--cerpspy-text-primary) !important;
+  font-weight: 800 !important;
+  font-size: 12px !important;
+}
+
+.cerpspy-kw-sep {
+  color: var(--cerpspy-text-muted) !important;
+  font-size: 11px !important;
+  user-select: none !important;
+  opacity: 0.75 !important;
+  margin: 0 2px !important;
+}
+
+/* Explicit Light Mode Rules for Search Bar Intel Strip */
+.cerpspy-theme-light .cerpspy-kw-lbl,
+.cerpspy-kw-strip:not(.cerpspy-theme-dark) .cerpspy-kw-lbl {
+  color: #334155 !important; /* Crisp dark slate */
+  font-weight: 600 !important;
+}
+
+.cerpspy-theme-light .cerpspy-kw-val,
+.cerpspy-kw-strip:not(.cerpspy-theme-dark) .cerpspy-kw-val {
+  color: #0F172A !important; /* Deep solid black */
+  font-weight: 800 !important;
+}
+
+.cerpspy-theme-light .cerpspy-kw-sep,
+.cerpspy-kw-strip:not(.cerpspy-theme-dark) .cerpspy-kw-sep {
+  color: #64748B !important;
+  opacity: 0.85 !important;
+}
+
+.cerpspy-theme-light .cerpspy-kw-refresh-btn,
+.cerpspy-kw-strip:not(.cerpspy-theme-dark) .cerpspy-kw-refresh-btn {
+  color: #64748B !important;
+}
+
+.cerpspy-theme-light .cerpspy-kw-refresh-btn:hover,
+.cerpspy-kw-strip:not(.cerpspy-theme-dark) .cerpspy-kw-refresh-btn:hover {
+  color: #4032c9 !important;
+}
+
+/* Explicit Dark Mode Rules for Search Bar Intel Strip */
+.cerpspy-theme-dark .cerpspy-kw-lbl {
+  color: #9AA0A6 !important;
+  font-weight: 600 !important;
+}
+
+.cerpspy-theme-dark .cerpspy-kw-val {
+  color: #E8EAED !important;
+  font-weight: 800 !important;
+}
+
+.cerpspy-theme-dark .cerpspy-kw-sep {
+  color: #80868B !important;
+  opacity: 0.75 !important;
+}
+
+.cerpspy-theme-dark .cerpspy-kw-refresh-btn {
+  color: #80868B !important;
+}
+
+.cerpspy-theme-dark .cerpspy-kw-refresh-btn:hover {
+  color: #6355eb !important;
+}
+
+.cerpspy-theme-dark .cerpspy-kw-sparkline path {
+  stroke: #4032c9 !important;
+}
+
+.cerpspy-kw-global-tag,
+.cerpspy-kw-market-badge {
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  opacity: 0.9 !important;
+  color: var(--cerpspy-brand-primary) !important;
+  margin-left: 2px !important;
+}
+
+/* Sparkline in Search Bar */
+.cerpspy-kw-sparkline-item {
+  display: inline-flex !important;
+  align-items: center !important;
+  margin-left: 4px !important;
+  cursor: pointer !important;
+  vertical-align: middle !important;
+}
+
+.cerpspy-kw-sparkline {
+  width: 44px !important;
+  height: 12px !important;
+  vertical-align: middle !important;
+}
+
+.cerpspy-kw-sparkline path {
+  fill: none !important;
+  stroke: var(--cerpspy-sparkline-stroke) !important;
+  stroke-width: 1.8 !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+}
+
+/* Refresh Button */
+.cerpspy-kw-refresh-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 2px !important;
+  color: var(--cerpspy-text-muted) !important;
+  cursor: pointer !important;
+  border-radius: 50% !important;
+  transition: color 0.15s ease, transform 0.25s ease !important;
+}
+
+.cerpspy-kw-refresh-btn:hover {
+  color: var(--cerpspy-brand-primary) !important;
+  transform: rotate(90deg) !important;
+}
+
+/* Floating 12-Month Trend Popover Base */
+.cerpspy-trend-popover {
+  display: none;
+  position: absolute;
+  z-index: 2147483647;
+  width: 350px !important;
+  max-width: calc(100vw - 24px) !important;
+  background: var(--cerpspy-card-bg);
+  border: 1px solid var(--cerpspy-border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  box-shadow: var(--cerpspy-popover-shadow);
+  font-family: var(--cerpspy-font);
+  box-sizing: border-box !important;
+  user-select: none;
+  overflow: hidden !important;
+}
+
+/* Invisible hover bridge so cursor never drops popover when moving downwards */
+.cerpspy-trend-popover::before {
+  content: "";
+  position: absolute;
+  top: -14px;
+  left: 0;
+  right: 0;
+  height: 16px;
+  background: transparent;
+}
+
+.cerpspy-popover-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--cerpspy-border);
+}
+
+.cerpspy-popover-header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cerpspy-popover-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--cerpspy-text-muted);
+}
+
+.cerpspy-popover-readout {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+.cerpspy-readout-label {
+  color: var(--cerpspy-text-secondary);
+  font-weight: 600;
+}
+
+.cerpspy-readout-val {
+  color: var(--cerpspy-brand-primary);
+  font-weight: 800;
+  font-size: 14px;
+}
+
+.cerpspy-popover-close-btn {
+  background: transparent;
+  border: none;
+  color: var(--cerpspy-text-muted);
+  cursor: pointer;
+  padding: 2px 6px;
+  font-size: 12px;
+  border-radius: 4px;
+  line-height: 1;
+  transition: all 0.15s ease;
+}
+
+.cerpspy-popover-close-btn:hover {
+  background: var(--cerpspy-border);
+  color: var(--cerpspy-text-primary);
+}
+
+.cerpspy-popover-chart {
+  display: flex !important;
+  align-items: flex-end !important;
+  justify-content: space-between !important;
+  height: 75px !important;
+  gap: 2px !important;
+  padding-top: 8px !important;
+  padding-bottom: 4px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+}
+
+.cerpspy-popover-col {
+  flex: 1 1 0 !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  height: 100% !important;
+  cursor: pointer !important;
+  position: relative !important;
+  box-sizing: border-box !important;
+  transition: transform 0.15s ease !important;
+}
+
+.cerpspy-popover-col:hover,
+.cerpspy-popover-col.is-active {
+  transform: translateY(-2px);
+}
+
+.cerpspy-popover-bar-wrap {
+  flex: 1 !important;
+  width: 100% !important;
+  display: flex !important;
+  align-items: flex-end !important;
+  justify-content: center !important;
+  position: relative !important;
+}
+
+.cerpspy-popover-bar {
+  width: 100% !important;
+  max-width: 14px !important;
+  min-width: 4px !important;
+  background: #CBD5E1 !important;
+  border-radius: 3px 3px 1px 1px !important;
+  transition: height 0.2s ease, background-color 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+.cerpspy-popover-month {
+  font-size: 8.5px !important;
+  font-weight: 600 !important;
+  color: var(--cerpspy-text-muted) !important;
+  margin-top: 4px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: clip !important;
+  max-width: 100% !important;
+  text-align: center !important;
+  line-height: 1 !important;
+  display: block !important;
+}
+
+.cerpspy-popover-footer {
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--cerpspy-border);
+  text-align: center;
+}
+
+.cerpspy-popover-hint {
+  font-size: 9.5px;
+  color: var(--cerpspy-text-muted);
+}
+
+/* ==========================================================================
+   Explicit Light Mode Overrides for 12-Month Trend Popover
+   ========================================================================== */
+
+.cerpspy-theme-light.cerpspy-trend-popover,
+.cerpspy-trend-popover:not(.cerpspy-theme-dark) {
+  background: #FFFFFF !important;
+  border: 1px solid #CBD5E1 !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.08) !important;
+}
+
+.cerpspy-theme-light .cerpspy-popover-header,
+.cerpspy-trend-popover:not(.cerpspy-theme-dark) .cerpspy-popover-header {
+  border-bottom: 1px solid #E2E8F0 !important;
+}
+
+.cerpspy-theme-light .cerpspy-popover-title,
+.cerpspy-trend-popover:not(.cerpspy-theme-dark) .cerpspy-popover-title {
+  color: #475569 !important;
+  font-weight: 700 !important;
+}
+
+.cerpspy-theme-light .cerpspy-readout-label,
+.cerpspy-trend-popover:not(.cerpspy-theme-dark) .cerpspy-readout-label {
+  color: #1E293B !important;
+  font-weight: 600 !important;
+}
+
+.cerpspy-theme-light .cerpspy-readout-val,
+.cerpspy-trend-popover:not(.cerpspy-theme-dark) .cerpspy-readout-val {
+  color: #4032c9 !important;
+  font-weight: 800 !important;
+  font-size: 14px !important;
+}
+
+.cerpspy-theme-light .cerpspy-popover-close-btn,
+.cerpspy-trend-popover:not(.cerpspy-theme-dark) .cerpspy-popover-close-btn {
+  color: #64748B !important;
+}
+
+.cerpspy-theme-light .cerpspy-popover-close-btn:hover,
+.cerpspy-trend-popover:not(.cerpspy-theme-dark) .cerpspy-popover-close-btn:hover {
+  background: #F1F5F9 !important;
+  color: #0F172A !important;
+}
+
+.cerpspy-theme-light .cerpspy-popover-bar,
+.cerpspy-trend-popover:not(.cerpspy-theme-dark) .cerpspy-popover-bar {
+  background: #94A3B8 !important;
+}
+
+.cerpspy-theme-light .cerpspy-popover-bar.is-peak,
+.cerpspy-trend-popover:not(.cerpspy-theme-dark) .cerpspy-popover-bar.is-peak {
+  background: #4032c9 !important;
+}
+
+.cerpspy-theme-light .cerpspy-popover-col:hover .cerpspy-popover-bar,
+.cerpspy-theme-light .cerpspy-popover-col.is-active .cerpspy-popover-bar,
+.cerpspy-trend-popover:not(.cerpspy-theme-dark) .cerpspy-popover-col:hover .cerpspy-popover-bar,
+.cerpspy-trend-popover:not(.cerpspy-theme-dark) .cerpspy-popover-col.is-active .cerpspy-popover-bar {
+  background: #4032c9 !important;
+  box-shadow: 0 0 6px rgba(64, 50, 201, 0.4) !important;
+}
+
+.cerpspy-theme-light .cerpspy-popover-month,
+.cerpspy-trend-popover:not(.cerpspy-theme-dark) .cerpspy-popover-month {
+  color: #475569 !important;
+  font-weight: 600 !important;
+}
+
+.cerpspy-theme-light .cerpspy-popover-col:hover .cerpspy-popover-month,
+.cerpspy-theme-light .cerpspy-popover-col.is-active .cerpspy-popover-month,
+.cerpspy-trend-popover:not(.cerpspy-theme-dark) .cerpspy-popover-col:hover .cerpspy-popover-month,
+.cerpspy-trend-popover:not(.cerpspy-theme-dark) .cerpspy-popover-col.is-active .cerpspy-popover-month {
+  color: #4032c9 !important;
+  font-weight: 800 !important;
+}
+
+.cerpspy-theme-light .cerpspy-popover-footer,
+.cerpspy-trend-popover:not(.cerpspy-theme-dark) .cerpspy-popover-footer {
+  border-top: 1px dashed #E2E8F0 !important;
+}
+
+.cerpspy-theme-light .cerpspy-popover-hint,
+.cerpspy-trend-popover:not(.cerpspy-theme-dark) .cerpspy-popover-hint {
+  color: #64748B !important;
+  font-weight: 500 !important;
+}
+
+/* ==========================================================================
+   Explicit Dark Mode Overrides for 12-Month Trend Popover
+   ========================================================================== */
+
+.cerpspy-theme-dark.cerpspy-trend-popover {
+  background: #303134 !important;
+  border: 1px solid #3C4043 !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6) !important;
+}
+
+.cerpspy-theme-dark .cerpspy-popover-header {
+  border-bottom: 1px solid #3C4043 !important;
+}
+
+.cerpspy-theme-dark .cerpspy-popover-title {
+  color: #80868B !important;
+}
+
+.cerpspy-theme-dark .cerpspy-readout-label {
+  color: #9AA0A6 !important;
+}
+
+.cerpspy-theme-dark .cerpspy-readout-val {
+  color: #818cf8 !important;
+}
+
+.cerpspy-theme-dark .cerpspy-popover-close-btn {
+  color: #80868B !important;
+}
+
+.cerpspy-theme-dark .cerpspy-popover-close-btn:hover {
+  background: #3C4043 !important;
+  color: #E8EAED !important;
+}
+
+.cerpspy-theme-dark .cerpspy-popover-bar {
+  background: #475569 !important;
+}
+
+.cerpspy-theme-dark .cerpspy-popover-bar.is-peak {
+  background: #6355eb !important;
+}
+
+.cerpspy-theme-dark .cerpspy-popover-col:hover .cerpspy-popover-bar,
+.cerpspy-theme-dark .cerpspy-popover-col.is-active .cerpspy-popover-bar {
+  background: #6355eb !important;
+  box-shadow: 0 0 8px rgba(99, 85, 235, 0.5) !important;
+}
+
+.cerpspy-theme-dark .cerpspy-popover-month {
+  color: #9AA0A6 !important;
+}
+
+.cerpspy-theme-dark .cerpspy-popover-col:hover .cerpspy-popover-month,
+.cerpspy-theme-dark .cerpspy-popover-col.is-active .cerpspy-popover-month {
+  color: #818cf8 !important;
+  font-weight: 700 !important;
+}
+
+.cerpspy-theme-dark .cerpspy-popover-footer {
+  border-top: 1px dashed #3C4043 !important;
+}
+
+.cerpspy-theme-dark .cerpspy-popover-hint {
+  color: #80868B !important;
+}
+
+/* ==========================================================================
+   2. SERP RESULT BADGES (Beside Domain Name on the Top Line)
+   ========================================================================== */
+
+.byrV5b,
+.TbwUpd,
+.B6fmyf,
+.G5AeWb,
+.H93uRe,
+.ap9ZKc {
+  overflow: visible !important;
+  max-width: none !important;
+}
+
+.cerpspy-serp-badge-container {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  margin-left: 8px !important;
+  margin-right: 4px !important;
+  vertical-align: middle !important;
+  cursor: pointer !important;
+  user-select: none !important;
+  box-sizing: border-box !important;
+  line-height: 1 !important;
+  position: relative !important;
+  z-index: 5 !important;
+  white-space: nowrap !important;
+}
+
+.cerpspy-badge-pill {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 3px !important;
+  padding: 2px 7px !important;
+  border-radius: 4px !important;
+  font-family: var(--cerpspy-font) !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  line-height: 14px !important;
+  color: #FFFFFF !important;
+  background-color: var(--cerpspy-dr-bg) !important;
+  border: none !important;
+  text-decoration: none !important;
+  white-space: nowrap !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.14) !important;
+  transition: transform 0.15s ease, opacity 0.15s ease !important;
+}
+
+.cerpspy-badge-pill strong {
+  font-weight: 800 !important;
+  color: #FFFFFF !important;
+}
+
+.cerpspy-badge-pill:hover {
+  transform: translateY(-1px) !important;
+  opacity: 0.92 !important;
+}
+
+/* Domain Age Pill: Neutral subtle slate pill */
+.cerpspy-badge-age {
+  background-color: #F1F5F9 !important;
+  color: #334155 !important;
+  border: 1px solid #CBD5E1 !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+}
+
+.cerpspy-badge-age strong {
+  color: #0F172A !important;
+}
+
+.cerpspy-theme-dark .cerpspy-badge-age {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  color: #CBD5E1 !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  box-shadow: none !important;
+}
+
+.cerpspy-theme-dark .cerpspy-badge-age strong {
+  color: #FFFFFF !important;
+}
+
+/* Young Website Badge: Vibrant emerald opportunity chip */
+.cerpspy-badge-young {
+  background-color: #ECFDF5 !important;
+  color: #047857 !important;
+  font-weight: 700 !important;
+  border: 1px solid #A7F3D0 !important;
+  box-shadow: 0 1px 2px rgba(4, 120, 87, 0.1) !important;
+  letter-spacing: 0.1px !important;
+}
+
+.cerpspy-badge-young strong {
+  color: #047857 !important;
+}
+
+.cerpspy-theme-dark .cerpspy-badge-young {
+  background-color: rgba(16, 185, 129, 0.16) !important;
+  color: #34D399 !important;
+  border: 1px solid rgba(16, 185, 129, 0.32) !important;
+  box-shadow: none !important;
+}
+
+.cerpspy-theme-dark .cerpspy-badge-young strong {
+  color: #34D399 !important;
+}
+
+/* Forum UGC Badge: Amber community chip */
+.cerpspy-badge-forum {
+  background-color: #FEF3C7 !important;
+  color: #92400E !important;
+  font-weight: 700 !important;
+  border: 1px solid #FCD34D !important;
+  box-shadow: 0 1px 2px rgba(146, 64, 14, 0.08) !important;
+}
+.cerpspy-badge-forum strong {
+  color: #92400E !important;
+}
+.cerpspy-theme-dark .cerpspy-badge-forum {
+  background-color: rgba(245, 158, 11, 0.18) !important;
+  color: #FBBF24 !important;
+  border: 1px solid rgba(245, 158, 11, 0.35) !important;
+  box-shadow: none !important;
+}
+.cerpspy-theme-dark .cerpspy-badge-forum strong {
+  color: #FBBF24 !important;
+}
+
+/* Low Authority Weak Spot Badge: Emerald opportunity chip */
+.cerpspy-badge-weak {
+  background-color: #ECFDF5 !important;
+  color: #065F46 !important;
+  font-weight: 700 !important;
+  border: 1px solid #6EE7B7 !important;
+  box-shadow: 0 1px 2px rgba(6, 95, 70, 0.08) !important;
+}
+.cerpspy-badge-weak strong {
+  color: #065F46 !important;
+}
+.cerpspy-theme-dark .cerpspy-badge-weak {
+  background-color: rgba(16, 185, 129, 0.18) !important;
+  color: #34D399 !important;
+  border: 1px solid rgba(16, 185, 129, 0.35) !important;
+  box-shadow: none !important;
+}
+.cerpspy-theme-dark .cerpspy-badge-weak strong {
+  color: #34D399 !important;
+}
+
+/* AI Overview Citation Badge: Royal purple chip */
+.cerpspy-badge-aio {
+  background-color: #F3E8FF !important;
+  color: #6B21A8 !important;
+  font-weight: 700 !important;
+  border: 1px solid #D8B4FE !important;
+  box-shadow: 0 1px 2px rgba(107, 33, 168, 0.08) !important;
+}
+.cerpspy-badge-aio strong {
+  color: #6B21A8 !important;
+}
+.cerpspy-theme-dark .cerpspy-badge-aio {
+  background-color: rgba(168, 85, 247, 0.18) !important;
+  color: #C084FC !important;
+  border: 1px solid rgba(168, 85, 247, 0.35) !important;
+  box-shadow: none !important;
+}
+.cerpspy-theme-dark .cerpspy-badge-aio strong {
+  color: #C084FC !important;
+}
+
+/* DR Pill: Royal Indigo (#4032c9) */
+.cerpspy-badge-dr {
+  background-color: var(--cerpspy-dr-bg) !important;
+}
+
+.cerpspy-badge-dr.is-inactive {
+  background-color: #475569 !important;
+  opacity: 0.75 !important;
+}
+
+/* DA Pill: Royal Indigo (#4032c9) */
+.cerpspy-badge-da {
+  background-color: var(--cerpspy-da-bg) !important;
+}
+
+/* Spam Score Pill */
+.cerpspy-badge-spam {
+  background-color: var(--cerpspy-spam-clean) !important;
+}
+
+.cerpspy-badge-spam.is-warning {
+  background-color: var(--cerpspy-spam-warn) !important;
+}
+
+.cerpspy-badge-spam.is-danger {
+  background-color: var(--cerpspy-spam-danger) !important;
+}
+
+/* Loading Pulse Animation */
+.pulse {
+  animation: cerpspyPulse 1.2s infinite ease-in-out;
+  opacity: 0.6;
+}
+
+@keyframes cerpspyPulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.9; }
+}
+
+/* ==========================================================================
+   SERP OPPORTUNITY / WEAKNESS SCANNER PILL & POPOVER (cerpspy Design System)
+   ========================================================================== */
+
+.cerpspy-opp-container {
+  display: inline-flex !important;
+  align-items: center !important;
+}
+
+.cerpspy-opp-pill {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  padding: 2px 9px !important;
+  border-radius: 9999px !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  line-height: 16px !important;
+  cursor: pointer !important;
+  user-select: none !important;
+  text-decoration: none !important;
+  transition: transform 0.15s ease, filter 0.15s ease, box-shadow 0.15s ease !important;
+  letter-spacing: -0.01em !important;
+}
+
+.cerpspy-opp-pill:hover {
+  transform: translateY(-1px) !important;
+  filter: brightness(1.1) !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25) !important;
+}
+
+/* Green: Easy Target / Forum Gap */
+.cerpspy-opp-pill.is-opportunity {
+  background: rgba(16, 185, 129, 0.12) !important;
+  color: #10B981 !important;
+  border: 1px solid rgba(16, 185, 129, 0.35) !important;
+}
+.cerpspy-theme-light .cerpspy-opp-pill.is-opportunity,
+.cerpspy-kw-strip:not(.cerpspy-theme-dark) .cerpspy-opp-pill.is-opportunity {
+  background: #ECFDF5 !important;
+  color: #047857 !important;
+  border: 1px solid #A7F3D0 !important;
+}
+
+/* Yellow: Moderate Competition */
+.cerpspy-opp-pill.is-moderate {
+  background: rgba(245, 158, 11, 0.12) !important;
+  color: #F59E0B !important;
+  border: 1px solid rgba(245, 158, 11, 0.35) !important;
+}
+.cerpspy-theme-light .cerpspy-opp-pill.is-moderate,
+.cerpspy-kw-strip:not(.cerpspy-theme-dark) .cerpspy-opp-pill.is-moderate {
+  background: #FFFBEB !important;
+  color: #B45309 !important;
+  border: 1px solid #FDE68A !important;
+}
+
+/* Red: High Competition */
+.cerpspy-opp-pill.is-hard {
+  background: rgba(239, 68, 68, 0.12) !important;
+  color: #EF4444 !important;
+  border: 1px solid rgba(239, 68, 68, 0.35) !important;
+}
+.cerpspy-theme-light .cerpspy-opp-pill.is-hard,
+.cerpspy-kw-strip:not(.cerpspy-theme-dark) .cerpspy-opp-pill.is-hard {
+  background: #FEF2F2 !important;
+  color: #B91C1C !important;
+  border: 1px solid #FECACA !important;
+}
+
+.cerpspy-opp-dot {
+  width: 6px !important;
+  height: 6px !important;
+  border-radius: 50% !important;
+  background-color: currentColor !important;
+  display: inline-block !important;
+  animation: cerpspyPulse 1.8s infinite ease-in-out !important;
+}
+
+/* Opportunity Popover Modal */
+.cerpspy-opp-popover {
+  display: none;
+  position: absolute;
+  z-index: 2147483647;
+  width: 365px;
+  max-height: 440px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+  background: var(--cerpspy-card-bg);
+  border: 1px solid var(--cerpspy-border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45), 0 2px 8px rgba(0, 0, 0, 0.25);
+  font-family: var(--cerpspy-font);
+  box-sizing: border-box;
+  backdrop-filter: blur(12px);
+}
+
+.cerpspy-theme-light .cerpspy-opp-popover {
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+.cerpspy-opp-popover::-webkit-scrollbar {
+  width: 5px;
+}
+.cerpspy-opp-popover::-webkit-scrollbar-track {
+  background: transparent;
+}
+.cerpspy-opp-popover::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+.cerpspy-theme-light .cerpspy-opp-popover::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.cerpspy-opp-popover-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--cerpspy-border);
+  margin-bottom: 8px;
+}
+
+/* Segmented Tabs Navigation for Opportunity Popover */
+.cerpspy-opp-tab-nav {
+  display: flex !important;
+  align-items: center !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid var(--cerpspy-border) !important;
+  border-radius: 8px !important;
+  padding: 2px !important;
+  margin-bottom: 9px !important;
+  gap: 2px !important;
+}
+
+.cerpspy-theme-light .cerpspy-opp-tab-nav {
+  background: #F1F5F9 !important;
+  border-color: #E2E8F0 !important;
+}
+
+.cerpspy-opp-tab-btn {
+  flex: 1 !important;
+  padding: 4px 8px !important;
+  font-family: var(--cerpspy-font) !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: var(--cerpspy-text-secondary) !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
+  text-align: center !important;
+  transition: all 0.15s ease !important;
+  white-space: nowrap !important;
+  user-select: none !important;
+}
+
+.cerpspy-opp-tab-btn:hover {
+  color: var(--cerpspy-text-primary) !important;
+}
+
+.cerpspy-opp-tab-btn.is-active {
+  background: #4032c9 !important;
+  color: #FFFFFF !important;
+  font-weight: 700 !important;
+  box-shadow: 0 1px 3px rgba(64, 50, 201, 0.3) !important;
+}
+
+.cerpspy-opp-tab-pane {
+  display: none !important;
+}
+
+.cerpspy-opp-tab-pane.is-active {
+  display: block !important;
+}
+
+.cerpspy-opp-empty-box {
+  text-align: center !important;
+  padding: 14px 10px !important;
+}
+
+.cerpspy-opp-popover-brand {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cerpspy-opp-brand-logo {
+  width: 18px !important;
+  height: 18px !important;
+  border-radius: 4px !important;
+  display: block !important;
+  flex-shrink: 0 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3) !important;
+  object-fit: contain !important;
+}
+
+.cerpspy-opp-brand-name {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--cerpspy-text-primary);
+  letter-spacing: -0.02em;
+}
+
+.cerpspy-opp-brand-tag {
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(99, 102, 241, 0.18);
+  color: #818cf8;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+}
+
+.cerpspy-theme-light .cerpspy-opp-brand-tag {
+  background: #EEF2FF;
+  color: #4F46E5;
+  border: 1px solid #C7D2FE;
+}
+
+.cerpspy-opp-popover-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 9999px;
+  white-space: nowrap !important;
+  line-height: 15px !important;
+  letter-spacing: -0.01em;
+}
+
+.cerpspy-opp-popover-badge.is-opportunity {
+  background: rgba(16, 185, 129, 0.16) !important;
+  color: #10B981 !important;
+  border: 1px solid rgba(16, 185, 129, 0.35) !important;
+}
+
+.cerpspy-opp-popover-badge.is-moderate {
+  background: rgba(245, 158, 11, 0.16) !important;
+  color: #F59E0B !important;
+  border: 1px solid rgba(245, 158, 11, 0.35) !important;
+}
+
+.cerpspy-opp-popover-badge.is-hard {
+  background: rgba(239, 68, 68, 0.16) !important;
+  color: #EF4444 !important;
+  border: 1px solid rgba(239, 68, 68, 0.35) !important;
+}
+
+.cerpspy-opp-card {
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid var(--cerpspy-border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin-bottom: 8px;
+}
+
+.cerpspy-theme-light .cerpspy-opp-card {
+  background: #F8FAFC;
+  border-color: #E2E8F0;
+}
+
+.cerpspy-opp-card-label {
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--cerpspy-text-muted);
+  margin-bottom: 4px;
+}
+
+.cerpspy-opp-competitor-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.cerpspy-opp-domain-name {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--cerpspy-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 185px;
+}
+
+.cerpspy-opp-mini-badges {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.cerpspy-opp-mini-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 4px;
+  line-height: 14px;
+}
+
+.cerpspy-opp-mini-badge.is-rank {
+  background: rgba(16, 185, 129, 0.18);
+  color: #10B981;
+}
+
+.cerpspy-opp-mini-badge.is-dr {
+  background: #192b4d;
+  color: #8ab4f8;
+}
+
+.cerpspy-theme-light .cerpspy-opp-mini-badge.is-dr {
+  background: #e8f0fe;
+  color: #1a73e8;
+}
+
+.cerpspy-opp-mini-badge.is-age {
+  background: rgba(148, 163, 184, 0.16);
+  color: #cbd5e1;
+}
+
+.cerpspy-theme-light .cerpspy-opp-mini-badge.is-age {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.cerpspy-opp-competitor-item {
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.cerpspy-opp-competitor-item:first-child {
+  padding-top: 2px;
+}
+
+.cerpspy-opp-competitor-item:last-child {
+  border-bottom: none;
+  padding-bottom: 2px;
+}
+
+.cerpspy-theme-light .cerpspy-opp-competitor-item {
+  border-bottom-color: #E2E8F0;
+}
+
+.cerpspy-opp-date-meta {
+  font-size: 10.5px;
+  color: #94A3B8;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 3px;
+  line-height: 1.25;
+}
+
+.cerpspy-theme-light .cerpspy-opp-date-meta {
+  color: #64748B;
+}
+
+.cerpspy-opp-date-meta strong {
+  color: var(--cerpspy-text-primary);
+  font-weight: 600;
+}
+
+.cerpspy-opp-card-desc {
+  font-size: 11.5px;
+  line-height: 1.4;
+  color: #CBD5E1; /* Crisp, readable silver-slate */
+}
+
+.cerpspy-theme-light .cerpspy-opp-card-desc {
+  color: #334155; /* Crisp dark slate for light mode */
+}
+
+.cerpspy-opp-avg-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--cerpspy-border);
+  font-size: 11px;
+  color: var(--cerpspy-text-secondary);
+}
+
+.cerpspy-opp-avg-gauge {
+  width: 90px;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 9999px;
+  overflow: hidden;
+  position: relative;
+}
+
+.cerpspy-theme-light .cerpspy-opp-avg-gauge {
+  background: #E2E8F0;
+}
+
+.cerpspy-opp-avg-fill {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.3s ease;
+}
+
+.cerpspy-opp-footer-meta {
+  font-size: 9px;
+  color: var(--cerpspy-text-muted);
+  text-align: right;
+  margin-top: 6px;
+}
+
+/* ==========================================================================
+   MINI BARS & BOOKMARK ICON (Under Google Search Bar)
+   ========================================================================== */
+
+.cerpspy-mini-bars {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 1.5px;
+  height: 12px;
+  margin-left: 2px;
+  vertical-align: middle;
+  cursor: pointer;
+}
+
+.cerpspy-mini-bar {
+  width: 2.2px;
+  background-color: var(--cerpspy-brand-primary, #4032c9);
+  border-radius: 0.5px;
+  opacity: 0.85;
+  transition: height 0.2s ease, opacity 0.15s ease;
+}
+
+.cerpspy-mini-bars:hover .cerpspy-mini-bar {
+  opacity: 1;
+}
+
+.cerpspy-kw-bookmark {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 2px;
+  cursor: pointer;
+  opacity: 0.8;
+  color: var(--cerpspy-brand-primary, #4032c9);
+  position: relative !important;
+  transition: opacity 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+
+.cerpspy-kw-bookmark:hover {
+  opacity: 1;
+  color: #2A1FB2;
+  transform: scale(1.1);
+}
+
+.cerpspy-theme-dark .cerpspy-kw-bookmark {
+  color: var(--cerpspy-brand-primary, #4032c9);
+}
+
+.cerpspy-theme-dark .cerpspy-kw-bookmark:hover {
+  color: #6355eb;
+}
+
+.cerpspy-kw-copied-toast {
+  position: absolute !important;
+  bottom: calc(100% + 5px) !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  background: #059669 !important;
+  color: #FFFFFF !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  padding: 2px 7px !important;
+  border-radius: 4px !important;
+  white-space: nowrap !important;
+  pointer-events: none !important;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25) !important;
+  z-index: 100 !important;
+  animation: cerpspyToastPop 0.15s ease !important;
+}
+
+@keyframes cerpspyToastPop {
+  from { opacity: 0; transform: translate(-50%, 4px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+.cerpspy-opp-export-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  padding: 3px 8px !important;
+  font-size: 10px !important;
+  font-weight: 600 !important;
+  font-family: inherit !important;
+  color: var(--cerpspy-text-secondary) !important;
+  background: transparent !important;
+  border: 1px solid var(--cerpspy-border) !important;
+  border-radius: 4px !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  line-height: 1 !important;
+}
+
+.cerpspy-opp-export-btn:hover {
+  background: var(--cerpspy-border) !important;
+  color: var(--cerpspy-text-primary) !important;
+}
+
+/* Credit Saver Mode: On-Demand Keyword Fetch Button */
+.cerpspy-kw-load-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  background: var(--cerpspy-brand-primary, #4032c9) !important;
+  color: #FFFFFF !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  padding: 2px 9px !important;
+  border-radius: 4px !important;
+  border: none !important;
+  cursor: pointer !important;
+  transition: transform 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease !important;
+  line-height: 16px !important;
+  box-shadow: 0 1px 3px rgba(64, 50, 201, 0.3) !important;
+}
+
+.cerpspy-kw-load-btn:hover {
+  transform: translateY(-1px) !important;
+  opacity: 0.92 !important;
+  box-shadow: 0 3px 8px rgba(64, 50, 201, 0.4) !important;
+}
+
+/* Action buttons in Search Bar Strip (PAA Harvester, CSV Exporter, Pause) */
+.cerpspy-kw-action-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  padding: 2px 7px !important;
+  height: 20px !important;
+  border-radius: 9999px !important;
+  font-family: var(--cerpspy-font) !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  line-height: 14px !important;
+  color: var(--cerpspy-text-secondary) !important;
+  background: var(--cerpspy-bg) !important;
+  border: 1px solid var(--cerpspy-border) !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  user-select: none !important;
+  text-decoration: none !important;
+}
+
+.cerpspy-kw-action-btn:hover {
+  color: var(--cerpspy-brand-primary) !important;
+  border-color: var(--cerpspy-brand-primary) !important;
+  background: rgba(64, 50, 201, 0.08) !important;
+  transform: translateY(-0.5px) !important;
+}
+
+.cerpspy-kw-action-btn.is-success {
+  color: #059669 !important;
+  border-color: #059669 !important;
+  background: rgba(5, 150, 105, 0.1) !important;
+}
+
+.cerpspy-theme-dark .cerpspy-kw-action-btn {
+  background: #303134 !important;
+  border-color: #3C4043 !important;
+  color: #E8EAED !important;
+}
+
+.cerpspy-theme-dark .cerpspy-kw-action-btn:hover {
+  background: rgba(129, 140, 248, 0.16) !important;
+  border-color: #818CF8 !important;
+  color: #FFFFFF !important;
+}
+
+.cerpspy-kw-bookmark {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 20px !important;
+  height: 20px !important;
+  border-radius: 9999px !important;
+  color: var(--cerpspy-text-muted) !important;
+  transition: all 0.15s ease !important;
+}
+
+.cerpspy-kw-bookmark:hover {
+  color: #F59E0B !important;
+  background: rgba(245, 158, 11, 0.12) !important;
+  transform: scale(1.08) !important;
+}
+
+.cerpspy-kw-aio-chip {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 3px !important;
+  padding: 1px 6px !important;
+  border-radius: 4px !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  color: #6B21A8 !important;
+  background: #F3E8FF !important;
+  border: 1px solid #D8B4FE !important;
+}
+
+.cerpspy-theme-dark .cerpspy-kw-aio-chip {
+  color: #C084FC !important;
+  background: rgba(168, 85, 247, 0.18) !important;
+  border-color: rgba(168, 85, 247, 0.35) !important;
+}
+
+/* ==========================================================================
+   Search Intent Classifier Badges
+   ========================================================================== */
+.cerpspy-intent-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 1px 6px !important;
+  height: 18px !important;
+  border-radius: 9999px !important;
+  font-family: var(--cerpspy-font) !important;
+  font-size: 10.5px !important;
+  font-weight: 700 !important;
+  line-height: 14px !important;
+  letter-spacing: 0.2px !important;
+  user-select: none !important;
+  transition: all 0.15s ease !important;
+}
+
+.cerpspy-intent-badge.is-informational {
+  background: rgba(59, 130, 246, 0.12) !important;
+  color: #2563EB !important;
+  border: 1px solid rgba(59, 130, 246, 0.3) !important;
+}
+
+.cerpspy-intent-badge.is-commercial {
+  background: rgba(147, 51, 234, 0.12) !important;
+  color: #7E22CE !important;
+  border: 1px solid rgba(147, 51, 234, 0.3) !important;
+}
+
+.cerpspy-intent-badge.is-transactional {
+  background: rgba(16, 185, 129, 0.12) !important;
+  color: #059669 !important;
+  border: 1px solid rgba(16, 185, 129, 0.3) !important;
+}
+
+.cerpspy-intent-badge.is-navigational {
+  background: rgba(245, 158, 11, 0.12) !important;
+  color: #D97706 !important;
+  border: 1px solid rgba(245, 158, 11, 0.3) !important;
+}
+
+/* Dark Mode Intent Badges */
+.cerpspy-theme-dark .cerpspy-intent-badge.is-informational {
+  background: rgba(59, 130, 246, 0.2) !important;
+  color: #93C5FD !important;
+  border-color: rgba(59, 130, 246, 0.4) !important;
+}
+
+.cerpspy-theme-dark .cerpspy-intent-badge.is-commercial {
+  background: rgba(168, 85, 247, 0.2) !important;
+  color: #D8B4FE !important;
+  border-color: rgba(168, 85, 247, 0.4) !important;
+}
+
+.cerpspy-theme-dark .cerpspy-intent-badge.is-transactional {
+  background: rgba(16, 185, 129, 0.2) !important;
+  color: #6EE7B7 !important;
+  border-color: rgba(16, 185, 129, 0.4) !important;
+}
+
+.cerpspy-theme-dark .cerpspy-intent-badge.is-navigational {
+  background: rgba(245, 158, 11, 0.2) !important;
+  color: #FCD34D !important;
+  border-color: rgba(245, 158, 11, 0.4) !important;
+}
+
+/* ==========================================================================
+   SERP Intel Popover Filter Controls & In-Page Reset Banner (Option A)
+   ========================================================================== */
+.cerpspy-opp-filter-row {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 6px !important;
+  margin-bottom: 8px !important;
+  padding: 5px 8px !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid var(--cerpspy-border) !important;
+  border-radius: 8px !important;
+}
+
+.cerpspy-theme-light .cerpspy-opp-filter-row {
+  background: #F1F5F9 !important;
+  border-color: #E2E8F0 !important;
+}
+
+.cerpspy-opp-filter-lbl {
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.04em !important;
+  color: var(--cerpspy-text-secondary) !important;
+}
+
+.cerpspy-opp-filter-buttons {
+  display: inline-flex !important;
+  gap: 4px !important;
+}
+
+.cerpspy-opp-filter-pill {
+  padding: 2px 7px !important;
+  border-radius: 6px !important;
+  font-size: 10.5px !important;
+  font-weight: 600 !important;
+  border: 1px solid var(--cerpspy-border) !important;
+  background: transparent !important;
+  color: var(--cerpspy-text-secondary) !important;
+  cursor: pointer !important;
+  transition: all 0.12s ease !important;
+  font-family: var(--cerpspy-font) !important;
+}
+
+.cerpspy-opp-filter-pill:hover {
+  color: var(--cerpspy-text-primary) !important;
+  border-color: #4032c9 !important;
+}
+
+.cerpspy-opp-filter-pill.is-active {
+  background: #4032c9 !important;
+  border-color: #4032c9 !important;
+  color: #FFFFFF !important;
+  font-weight: 700 !important;
+}
+
+.cerpspy-theme-dark .cerpspy-opp-filter-pill.is-active {
+  background: #4032c9 !important;
+  border-color: #818CF8 !important;
+  color: #FFFFFF !important;
+}
+
+/* Floating SERP Filter Reset Banner */
+.cerpspy-serp-filter-banner {
+  position: fixed !important;
+  bottom: 24px !important;
+  right: 24px !important;
+  z-index: 2147483640 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  padding: 8px 14px !important;
+  background: var(--cerpspy-card-bg) !important;
+  border: 1px solid var(--cerpspy-border) !important;
+  border-radius: 9999px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3) !important;
+  font-family: var(--cerpspy-font) !important;
+  font-size: 12px !important;
+  color: var(--cerpspy-text-primary) !important;
+  animation: cerpspyToastPop 0.2s ease-out !important;
+}
+
+.cerpspy-theme-dark .cerpspy-serp-filter-banner {
+  background: #202124 !important;
+  border-color: #3C4043 !important;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.6) !important;
+}
+
+.cerpspy-filter-banner-content {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+.cerpspy-filter-banner-text {
+  font-weight: 500 !important;
+  color: var(--cerpspy-text-primary) !important;
+}
+
+.cerpspy-filter-banner-reset {
+  display: inline-flex !important;
+  align-items: center !important;
+  padding: 3px 10px !important;
+  border-radius: 9999px !important;
+  border: none !important;
+  background: #4032c9 !important;
+  color: #FFFFFF !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+}
+
+.cerpspy-filter-banner-reset:hover {
+  background: #3123b3 !important;
+  transform: scale(1.03) !important;
+}
+
+/* Hidden by SERP filter */
+.cerpspy-filter-hidden {
+  display: none !important;
+}
+
+/* ==========================================================================
+   Tools Dropdown & Floating Menu (Strictly Bounded Strip Layout)
+   ========================================================================== */
+.cerpspy-tools-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  position: relative !important;
+  gap: 4px !important;
+  padding: 1px 7px !important;
+  height: 18px !important;
+  border-radius: 4px !important;
+  font-family: var(--cerpspy-font) !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  line-height: 16px !important;
+  color: #4032c9 !important;
+  background: rgba(64, 50, 201, 0.08) !important;
+  border: 1px solid rgba(64, 50, 201, 0.25) !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  user-select: none !important;
+  white-space: nowrap !important;
+}
+
+.cerpspy-tools-btn:hover,
+.cerpspy-tools-btn.is-open {
+  background: #4032c9 !important;
+  border-color: #4032c9 !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 1px 4px rgba(64, 50, 201, 0.25) !important;
+}
+
+.cerpspy-theme-dark .cerpspy-tools-btn {
+  color: #A5B4FC !important;
+  background: rgba(129, 140, 248, 0.12) !important;
+  border-color: rgba(129, 140, 248, 0.28) !important;
+}
+
+.cerpspy-theme-dark .cerpspy-tools-btn:hover,
+.cerpspy-theme-dark .cerpspy-tools-btn.is-open {
+  background: #6355eb !important;
+  border-color: #818CF8 !important;
+  color: #FFFFFF !important;
+}
+
+.cerpspy-tools-menu {
+  display: none;
+  position: fixed !important;
+  z-index: 2147483647 !important;
+  width: 220px !important;
+  box-sizing: border-box !important;
+  background: var(--cerpspy-card-bg) !important;
+  border: 1px solid var(--cerpspy-border) !important;
+  border-radius: 9px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22) !important;
+  padding: 5px !important;
+  font-family: var(--cerpspy-font) !important;
+  animation: cerpspyFadeIn 0.15s ease-out !important;
+}
+
+.cerpspy-theme-dark .cerpspy-tools-menu {
+  background: #202124 !important;
+  border-color: #3C4043 !important;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.6) !important;
+}
+
+.cerpspy-tools-item {
+  display: flex !important;
+  align-items: center !important;
+  gap: 9px !important;
+  width: 100% !important;
+  padding: 6px 8px !important;
+  border-radius: 6px !important;
+  border: none !important;
+  background: transparent !important;
+  color: var(--cerpspy-text-primary) !important;
+  cursor: pointer !important;
+  text-align: left !important;
+  transition: background 0.12s ease !important;
+  font-family: var(--cerpspy-font) !important;
+}
+
+.cerpspy-tools-item:hover {
+  background: rgba(64, 50, 201, 0.08) !important;
+}
+
+.cerpspy-theme-dark .cerpspy-tools-item:hover {
+  background: rgba(129, 140, 248, 0.15) !important;
+}
+
+.cerpspy-tools-item-text {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 1px !important;
+}
+
+.cerpspy-tools-item-title {
+  font-size: 11.5px !important;
+  font-weight: 600 !important;
+  color: var(--cerpspy-text-primary) !important;
+  line-height: 1.2 !important;
+}
+
+.cerpspy-theme-dark .cerpspy-tools-item-title {
+  color: #E8EAED !important;
+}
+
+.cerpspy-tools-item-sub {
+  font-size: 10px !important;
+  color: var(--cerpspy-text-muted) !important;
+  line-height: 1.2 !important;
+}
+
+.cerpspy-theme-dark .cerpspy-tools-item-sub {
+  color: #9AA0A6 !important;
+}

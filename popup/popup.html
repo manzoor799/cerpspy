@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>cerpspy - SEO & Domain Intelligence</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="app-container" id="appContainer">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="brand-row">
+        <div class="brand-identity">
+          <img src="../icons/icon-48.png" class="brand-logo" alt="cerpspy logo" width="24" height="24" />
+          <div class="brand-text">
+            <h1 class="brand-name">cerpspy</h1>
+            <span class="brand-tagline">SEO & Keyword Intelligence</span>
+          </div>
+        </div>
+        <div class="header-actions">
+          <button id="btnRefresh" class="icon-btn" title="Refresh Live Data" aria-label="Refresh Data">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+            </svg>
+          </button>
+          <button id="btnSettings" class="icon-btn" title="Settings & Preferences" aria-label="Settings">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Domain Search Input -->
+      <div class="search-box">
+        <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input type="text" id="domainInput" placeholder="Check any domain (e.g. nytimes.com)" spellcheck="false" autocomplete="off" />
+        <button id="btnSearch" class="btn-search">Analyze</button>
+      </div>
+    </header>
+
+    <!-- Main View -->
+    <main class="app-main" id="mainView">
+      <!-- Live Account & Credits Card (KWScanner Inspired) -->
+      <div class="account-credits-card" id="accountCreditsCard">
+        <div class="account-user-info" id="accountUserInfo">
+          <span class="account-name" id="accountUserName">Checking account...</span>
+          <span class="account-email" id="accountUserEmail">—</span>
+        </div>
+        <div class="account-credits-group">
+          <span class="credits-label">CREDITS</span>
+          <span class="credits-value-pill" id="liveCreditsDisplay">—</span>
+        </div>
+      </div>
+
+      <div class="domain-banner">
+        <div class="domain-banner-header">
+          <div class="domain-info-col">
+            <span class="domain-label">Active Domain</span>
+            <span class="domain-name" id="currentDomainDisplay">—</span>
+          </div>
+        </div>
+        <div class="domain-banner-tags" id="domainBannerTags" style="display:none;">
+          <span class="domain-tag-pill tag-young" id="youngWebsiteTag" style="display:none;">🌱 Young Website</span>
+          <span class="domain-tag-pill tag-lifecycle" id="lifecycleStageTag" style="display:none;">—</span>
+        </div>
+      </div>
+
+      <!-- Loading Skeleton -->
+      <div class="skeleton-container" id="skeletonView" style="display: none;">
+        <div class="skeleton-card skeleton-card-large"></div>
+      </div>
+
+      <!-- Error State -->
+      <div class="error-banner" id="errorView" style="display: none;">
+        <span class="error-icon">!</span>
+        <span class="error-text" id="errorMessage">Unable to fetch domain records.</span>
+      </div>
+
+      <!-- Metrics Card -->
+      <div class="cards-container" id="dataView">
+        <!-- Domain Age & Lifecycle Card -->
+        <section class="card card-age" id="cardAge">
+          <div class="card-header">
+            <div class="card-title-group">
+              <span class="card-badge badge-age">Domain Heritage</span>
+              <h2 class="card-title">Registration & Age Lifecycle</h2>
+            </div>
+          </div>
+
+          <div class="age-hero-row">
+            <div class="age-stat-box">
+              <span class="age-stat-label">Domain Age</span>
+              <span class="age-stat-value" id="domainAgeDisplay">—</span>
+            </div>
+            <div class="age-stat-box">
+              <span class="age-stat-label">Registered On</span>
+              <span class="age-stat-value age-stat-date" id="domainRegDateDisplay">—</span>
+            </div>
+          </div>
+
+          <div class="lifecycle-box" id="lifecycleDetailsBox" style="display:none;">
+            <div class="lifecycle-header">
+              <span class="lifecycle-label">SEO Lifecycle Stage</span>
+              <span class="lifecycle-badge" id="lifecycleBadge">—</span>
+            </div>
+            <p class="lifecycle-desc" id="lifecycleDesc">—</p>
+          </div>
+        </section>
+
+        <section class="card card-dr" id="cardDR">
+          <div class="card-header">
+            <div class="card-title-group">
+              <span class="card-badge badge-dr">Authority</span>
+              <h2 class="card-title">Ranking Power & Trust</h2>
+            </div>
+          </div>
+
+          <!-- Authority Dual Hero -->
+          <div class="authority-hero-row">
+            <!-- Ahrefs DR -->
+            <div class="auth-hero-box dr-hero-box">
+              <div class="auth-hero-header">
+                <span class="auth-hero-label">Ahrefs DR</span>
+                <span class="auth-hero-sublabel" id="drStatusTitle">Domain Rating</span>
+              </div>
+              <div class="dr-number-wrap">
+                <span class="dr-score-value" id="drScoreDisplay">0</span>
+                <span class="dr-score-max">/ 100</span>
+              </div>
+              <div class="flat-progress-track">
+                <div class="flat-progress-fill" id="drProgressFill" style="width: 0%;"></div>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- Quick Competitors / Comparison Scan -->
+        <section class="card card-quick-check" id="cardQuickCheck">
+          <div class="card-header">
+            <div class="card-title-group">
+              <span class="card-badge badge-quick">Quick Scan</span>
+              <h2 class="card-title">Compare Competitors</h2>
+            </div>
+          </div>
+          <p class="quick-check-hint">1-click to inspect competitor domain authority &amp; age:</p>
+          <div class="quick-domains-pills" id="quickDomainsPills">
+            <button type="button" class="quick-domain-btn" data-domain="chatgpt.com">chatgpt.com</button>
+            <button type="button" class="quick-domain-btn" data-domain="nytimes.com">nytimes.com</button>
+            <button type="button" class="quick-domain-btn" data-domain="wikipedia.org">wikipedia.org</button>
+            <button type="button" class="quick-domain-btn" data-domain="github.com">github.com</button>
+          </div>
+        </section>
+
+        <!-- Google SERP Quick Tools (Visible when active tab is Google Search) -->
+        <section class="card card-serp-tools" id="cardSerpTools" style="display: none;">
+          <div class="card-header">
+            <div class="card-title-group">
+              <span class="card-badge badge-serp-tools">SERP Tools</span>
+              <h2 class="card-title">Search Intelligence</h2>
+            </div>
+          </div>
+          <div class="serp-tools-query-row">
+            <span class="serp-tools-label">Active Query:</span>
+            <span class="serp-query-chip" id="serpQueryDisplay">—</span>
+          </div>
+          <div class="serp-tools-actions">
+            <button type="button" class="btn-serp-tool" id="btnPopupExportCsv">
+              <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M13 10v3H3v-3M8 2v8m-3-3 3 3 3-3" />
+              </svg>
+              <span>Export SERP to CSV</span>
+            </button>
+            <button type="button" class="btn-serp-tool" id="btnPopupCopyPaa">
+              <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="8" cy="8" r="6" />
+                <path d="M6 6.5a2 2 0 0 1 3.5 1.2c0 1.2-1.5 1.5-1.5 2.3" />
+                <circle cx="8" cy="12" r="0.8" fill="currentColor" />
+              </svg>
+              <span>Copy PAA Questions</span>
+            </button>
+          </div>
+          <div class="serp-tool-feedback" id="serpToolFeedback" style="display: none;"></div>
+        </section>
+      </div>
+    </main>
+
+    <!-- Settings Drawer -->
+    <div class="settings-drawer" id="settingsView" style="display: none;">
+      <div class="settings-header">
+        <button id="btnBackSettings" class="btn-back" title="Back to Overview">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+          <span>Back</span>
+        </button>
+        <div class="settings-title-wrap">
+          <h2 class="settings-title">Extension Preferences</h2>
+          <span class="settings-subtitle">Customize your Google Search view</span>
+        </div>
+      </div>
+
+      <div class="settings-body">
+        <!-- SECTION 1: Top Search Bar Panel -->
+        <div class="settings-section-card">
+          <div class="section-card-header">
+            <span class="section-icon" aria-hidden="true">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4032C9" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+            </span>
+            <div class="section-titles">
+              <h3 class="section-heading">Search Bar Intel Strip</h3>
+              <span class="section-subtext">Keywords metrics beneath Google search input</span>
+            </div>
+          </div>
+
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <span class="toggle-title">Enable Search Bar Strip</span>
+              <span class="toggle-desc">Master switch for the row beneath search bar.</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggleSearchBarPanel" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="toggle-row nested">
+            <div class="toggle-info">
+              <span class="toggle-title">Search Intent Classifier</span>
+              <span class="toggle-desc">Classify search intent (Informational, Commercial, etc.).</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggleShowIntent" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="toggle-row nested">
+            <div class="toggle-info">
+              <span class="toggle-title">Search Volume</span>
+              <span class="toggle-desc">Monthly search volume (e.g. 60.5K/mo).</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggleShowVolume" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="toggle-row nested">
+            <div class="toggle-info">
+              <span class="toggle-title">12-Month Trend Sparkline</span>
+              <span class="toggle-desc">Mini sparkline with monthly breakdown popup.</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggleShowTrend" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="toggle-row nested">
+            <div class="toggle-info">
+              <span class="toggle-title">Cost Per Click (CPC)</span>
+              <span class="toggle-desc">Estimated advertiser bid (e.g. $1.20).</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggleShowCpc" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="toggle-row nested">
+            <div class="toggle-info">
+              <span class="toggle-title">Paid Competition</span>
+              <span class="toggle-desc">Google Ads competition index (e.g. 0.00).</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggleShowCompetition" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="toggle-row nested">
+            <div class="toggle-info">
+              <span class="toggle-title">Auto-Fetch Keyword Data</span>
+              <span class="toggle-desc">Auto-load volume on search. Turn off to save credits.</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggleAutoFetchKeywords" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="toggle-row nested">
+            <div class="toggle-info">
+              <span class="toggle-title">Opportunity &amp; Weak Site Scanner</span>
+              <span class="toggle-desc">Pill badge highlighting ranking gaps and low DR sites.</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggleShowOpportunity" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="toggle-row nested">
+            <div class="toggle-info">
+              <span class="toggle-title">Instant SERP Filter Toggles</span>
+              <span class="toggle-desc">1-click chips to isolate DR ≤ 20, young sites, or hide forums.</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggleShowFilters" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="toggle-row nested">
+            <div class="toggle-info">
+              <span class="toggle-title">1-Click SERP Export (CSV)</span>
+              <span class="toggle-desc">Download all organic rankings &amp; DR scores to CSV.</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggleShowExport" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="toggle-row nested">
+            <div class="toggle-info">
+              <span class="toggle-title">People Also Ask (PAA)</span>
+              <span class="toggle-desc">1-click copy related Google search questions.</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggleShowPaa" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="toggle-row nested">
+            <div class="toggle-info">
+              <span class="toggle-title">Save Keyword / Bookmark</span>
+              <span class="toggle-desc">1-click copy keyword &amp; metrics to clipboard.</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggleShowBookmark" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="form-group" style="margin-top: 10px;">
+            <label for="selectTargetCountry" class="form-label">Target Market / Country</label>
+            <select id="selectTargetCountry" class="form-select">
+              <option value="global" selected>🌐 Global (Worldwide Pool · KWScanner Standard)</option>
+              <option value="auto">🎯 Auto-Detect from Google SERP</option>
+              <option value="us">🇺🇸 United States (US)</option>
+              <option value="uk">🇬🇧 United Kingdom (UK)</option>
+              <option value="ca">🇨🇦 Canada (CA)</option>
+              <option value="au">🇦🇺 Australia (AU)</option>
+              <option value="in">🇮🇳 India (IN)</option>
+              <option value="nz">🇳🇿 New Zealand (NZ)</option>
+              <option value="za">🇿🇦 South Africa (ZA)</option>
+            </select>
+            <span class="form-help">Global pool provides standard KWScanner metrics. Pick a fixed market or Auto-Detect for regional metrics.</span>
+          </div>
+
+          <div class="form-group" style="margin-top: 8px;">
+            <label for="selectKwNetwork" class="form-label">Search Network Factor</label>
+            <select id="selectKwNetwork" class="form-select">
+              <option value="google_search_and_partners" selected>🌐 Google Search &amp; Partners (Default · KWScanner Standard)</option>
+              <option value="google_search">🔍 Google Search Only (Core Organic Volume)</option>
+            </select>
+            <span class="form-help">Google Search &amp; Partners matches official KWScanner search volume and CPC results.</span>
+          </div>
+        </div>
+
+        <!-- SECTION 2: SERP Badges on Search Results -->
+        <div class="settings-section-card">
+          <div class="section-card-header">
+            <span class="section-icon" aria-hidden="true">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4032C9" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+                <line x1="7" y1="7" x2="7.01" y2="7"></line>
+              </svg>
+            </span>
+            <div class="section-titles">
+              <h3 class="section-heading">SERP Badges</h3>
+              <span class="section-subtext">Metrics displayed beside each Google result</span>
+            </div>
+          </div>
+
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <span class="toggle-title">Enable SERP Badges</span>
+              <span class="toggle-desc">Master switch for chips beside search results.</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggleSerpBadges" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="toggle-row nested">
+            <div class="toggle-info">
+              <span class="toggle-title">Ahrefs Domain Rating (DR)</span>
+              <span class="toggle-desc">Ahrefs backlink authority score (0–100).</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggleShowDR" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+
+          <div class="toggle-row nested">
+            <div class="toggle-info">
+              <span class="toggle-title">Domain Age</span>
+              <span class="toggle-desc">Exact age pill (e.g. Age: 1 y, 12 m).</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggleShowDomainAge" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="toggle-row nested">
+            <div class="toggle-info">
+              <span class="toggle-title">Young Website Badge</span>
+              <span class="toggle-desc">Highlights domains under 1 year old (🌱 Young Website).</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggleShowYoungBadge" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- SECTION 3: Cache Policy -->
+        <div class="settings-section-card">
+          <div class="section-card-header">
+            <span class="section-icon" aria-hidden="true">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4032C9" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path>
+              </svg>
+            </span>
+            <div class="section-titles">
+              <h3 class="section-heading">Data Cache Policy</h3>
+              <span class="section-subtext">Speed optimization and credit savings</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="selectCache" class="form-label">Cache Duration</label>
+            <select id="selectCache" class="form-select">
+              <option value="720" selected>30 Days (Fastest 0ms response - Recommended)</option>
+              <option value="168">7 Days (Weekly Refresh)</option>
+              <option value="24">24 Hours (Daily Refresh)</option>
+              <option value="0">Always Live</option>
+            </select>
+          </div>
+
+          <div class="section-button-row">
+            <button id="btnClearCache" class="btn-secondary">Clear Saved Cache</button>
+          </div>
+        </div>
+
+        <!-- SECTION 4: API Connections -->
+        <div class="settings-section-card">
+          <div class="section-card-header">
+            <span class="section-icon" aria-hidden="true">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4032C9" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path>
+              </svg>
+            </span>
+            <div class="section-titles">
+              <h3 class="section-heading">API Connections</h3>
+              <span class="section-subtext">Preloaded and active</span>
+            </div>
+          </div>
+
+          <!-- 1. KWScanner API Token -->
+          <div class="form-group kwscanner-config-card">
+            <div class="label-with-status">
+              <label class="form-label">KWScanner API Token</label>
+              <span class="status-pill status-active" id="kwScannerKeyStatus">● Active</span>
+            </div>
+            <p class="form-subtext">Official Google Keyword Planner integration. Powers live Search Volume, CPC, paid competition, and 12-month historical trends.</p>
+            
+            <!-- List of connected KWScanner key -->
+            <div class="api-keys-list" id="kwScannerKeysList"></div>
+
+            <!-- Add / Update key input row -->
+            <div class="api-add-row" id="rowAddKwScannerKey">
+              <div class="input-with-action" style="flex: 1;">
+                <input type="password" id="inputNewKwScannerKey" class="form-input" placeholder="Paste custom kws_... token" />
+                <button type="button" class="btn-toggle-mask" id="btnToggleNewKwScannerMask" title="Show/Hide">👁️</button>
+              </div>
+              <button type="button" class="btn-action-add" id="btnAddKwScannerKey">+ Add Key</button>
+            </div>
+            
+            <div class="test-action-row" style="margin-top: 8px;">
+              <span class="form-help">Get your free token at <a href="https://kwscanner.com" target="_blank" style="color:#60A5FA;">kwscanner.com</a>. Discontinue or update anytime.</span>
+              <div style="display:flex;gap:6px;align-items:center;">
+                <button type="button" class="btn-restore-action" id="btnToggleUpdateKwScanner" style="display:none;">Update Token</button>
+                <button type="button" class="btn-test-action" id="btnTestKwScanner">Test Connection</button>
+              </div>
+            </div>
+            <div class="test-result-badge" id="kwScannerTestResult" style="display: none;"></div>
+          </div>
+
+          <!-- 2. Ahrefs Free Token -->
+          <div class="form-group">
+            <div class="label-with-status">
+              <label class="form-label">Ahrefs Free Token</label>
+              <span class="status-pill status-active" id="ahrefsKeyStatus">● Active</span>
+            </div>
+            <p class="form-subtext">Powers Ahrefs Domain Rating (DR) backlink authority scores directly beside Google search results.</p>
+            
+            <!-- List of connected Ahrefs key -->
+            <div class="api-keys-list" id="ahrefsKeysList"></div>
+
+            <!-- Add / Update key input row -->
+            <div class="api-add-row" id="rowAddAhrefsKey">
+              <div class="input-with-action" style="flex: 1;">
+                <input type="password" id="inputNewAhrefsKey" class="form-input" placeholder="Paste Ahrefs Free Token" />
+                <button type="button" class="btn-toggle-mask" id="btnToggleNewAhrefsMask" title="Show/Hide">👁️</button>
+              </div>
+              <button type="button" class="btn-action-add" id="btnAddAhrefsKey">+ Add Key</button>
+            </div>
+            
+            <div class="test-action-row" style="margin-top: 8px;">
+              <span class="form-help">Get your token at <a href="https://ahrefs.com/api" target="_blank" style="color:#60A5FA;">ahrefs.com/api</a>. DR also works via free public fallback.</span>
+              <div style="display:flex;gap:6px;align-items:center;">
+                <button type="button" class="btn-restore-action" id="btnToggleUpdateAhrefs" style="display:none;">Update Token</button>
+                <button type="button" class="btn-test-action" id="btnTestAhrefs">Test Connection</button>
+              </div>
+            </div>
+            <div class="test-result-badge" id="ahrefsTestResult" style="display: none;"></div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../utils/seoInsights.js"></script>
+  <script src="../utils/domainAge.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
