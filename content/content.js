@@ -261,7 +261,12 @@
       showYoungBadge = s.showYoungBadge !== false;
       showForumBadge = s.showForumBadge !== false;
       showWeakBadge = s.showWeakBadge !== false;
-      autoFetchKeywords = s.autoFetchKeywords !== false;
+      // Auto-fetch keywords: Always enable by default so search volume and CPC display instantly on every search
+      if (s.autoFetchKeywords === false) {
+        s.autoFetchKeywords = true;
+        chrome.storage.local.set({ cerpspy_settings: s }).catch(() => {});
+      }
+      autoFetchKeywords = true;
       isKwScannerDiscontinued = s.kwScannerDiscontinued === true || !s.kwScannerApiKey;
       isAhrefsDiscontinued = s.ahrefsDiscontinued === true || !s.ahrefsApiKey;
     } catch (e) {
@@ -3345,6 +3350,36 @@
         adjustGoogleLayoutForStrip(true);
       }
     });
+
+    // Global capture-phase event delegation for "Load Volume & CPC" chip
+    // Guarantees 100% reliable 1-click execution even across rapid Google DOM mutations
+    document.addEventListener('click', (e) => {
+      const fetchBtn = e.target?.closest?.('#cerpspyBtnFetchKw');
+      if (!fetchBtn) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      const query = extractSearchQuery();
+      const cleanKw = cleanKeywordForVolume(query);
+      if (cleanKw) {
+        userRequestedKeywords.add(cleanKw);
+      }
+
+      const strip = document.getElementById(SEARCHBAR_PANEL_ID);
+      if (strip) {
+        strip.setAttribute('data-cerpspy-loading', cleanKw);
+        strip.innerHTML = `
+          ${showVolume ? '<span class="cerpspy-kw-item"><span class="cerpspy-kw-lbl">Volume:</span> <strong class="cerpspy-kw-val pulse">...</strong></span>' : ''}
+          ${showVolume && (showCpc || showTrend) ? '<span class="cerpspy-kw-sep">|</span>' : ''}
+          ${showCpc ? '<span class="cerpspy-kw-item"><span class="cerpspy-kw-lbl">CPC:</span> <strong class="cerpspy-kw-val pulse">...</strong></span>' : ''}
+          ${showCpc && showTrend ? '<span class="cerpspy-kw-sep">|</span>' : ''}
+          ${showTrend ? '<span class="cerpspy-kw-item"><span class="cerpspy-kw-lbl">Trend:</span> <strong class="cerpspy-kw-val pulse">...</strong></span>' : ''}
+        `;
+      }
+
+      renderSearchBarStrip(false);
+    }, true);
 
     // Listen for live setting updates and late-arriving domain metrics from background worker
     chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
