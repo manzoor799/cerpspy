@@ -71,8 +71,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnPopupCopyPaa = document.getElementById('btnPopupCopyPaa');
   const serpToolFeedback = document.getElementById('serpToolFeedback');
 
-  // Settings Toggles - SERP Badges
+  // Settings Toggles - SERP & Website Badges
   const toggleSerpBadges = document.getElementById('toggleSerpBadges');
+  const toggleSiteBadge = document.getElementById('toggleSiteBadge');
   const toggleShowDR = document.getElementById('toggleShowDR');
   const toggleShowDomainAge = document.getElementById('toggleShowDomainAge');
   const toggleShowYoungBadge = document.getElementById('toggleShowYoungBadge');
@@ -114,15 +115,56 @@ document.addEventListener('DOMContentLoaded', () => {
   const DEFAULT_AHREFS_KEY = '';
 
   /**
-   * Utility: Clean and normalize domain name
+   * Utility: Clean and normalize domain name to root domain (matching service-worker cache keys)
    */
+  const TWO_PART_TLDS = new Set([
+    'co.uk', 'org.uk', 'me.uk', 'ltd.uk', 'plc.uk', 'net.uk', 'ac.uk', 'gov.uk', 'sch.uk',
+    'com.au', 'net.au', 'org.au', 'edu.au', 'gov.au', 'asn.au', 'id.au',
+    'co.nz', 'net.nz', 'org.nz', 'govt.nz', 'ac.nz', 'geek.nz', 'school.nz',
+    'com.pk', 'org.pk', 'net.pk', 'edu.pk', 'gov.pk', 'gob.pk', 'gop.pk', 'gos.pk', 'gok.pk',
+    'co.in', 'net.in', 'org.in', 'gen.in', 'firm.in', 'ind.in', 'ac.in', 'edu.in', 'res.in', 'gov.in',
+    'com.bd', 'net.bd', 'org.bd', 'edu.bd', 'gov.bd', 'mil.bd', 'ac.bd',
+    'com.np', 'org.np', 'edu.np', 'gov.np', 'net.np',
+    'com.lk', 'org.lk', 'edu.lk', 'gov.lk', 'net.lk',
+    'co.jp', 'ne.jp', 'or.jp', 'ac.jp', 'go.jp', 'ed.jp', 'ad.jp', 'gr.jp', 'lg.jp',
+    'co.kr', 'ne.kr', 'or.kr', 're.kr', 'pe.kr', 'go.kr', 'mil.kr', 'ac.kr',
+    'com.tw', 'net.tw', 'org.tw', 'idv.tw', 'game.tw', 'ebiz.tw', 'club.tw', 'edu.tw', 'gov.tw',
+    'com.hk', 'net.hk', 'org.hk', 'idv.hk', 'edu.hk', 'gov.hk',
+    'com.sg', 'net.sg', 'org.sg', 'edu.sg', 'gov.sg', 'per.sg',
+    'com.my', 'net.my', 'org.my', 'gov.my', 'edu.my', 'mil.my', 'name.my',
+    'com.ph', 'net.ph', 'org.ph', 'gov.ph', 'edu.ph', 'ngo.ph', 'mil.ph',
+    'co.th', 'ac.th', 'go.th', 'in.th', 'mi.th', 'net.th', 'or.th',
+    'co.id', 'net.id', 'org.id', 'ac.id', 'sch.id', 'go.id', 'mil.id', 'web.id', 'my.id', 'biz.id',
+    'com.vn', 'net.vn', 'org.vn', 'edu.vn', 'gov.vn', 'int.vn', 'ac.vn', 'biz.vn', 'info.vn', 'name.vn', 'pro.vn',
+    'com.sa', 'net.sa', 'org.sa', 'gov.sa', 'med.sa', 'edu.sa', 'pub.sa', 'sch.sa',
+    'com.ae', 'net.ae', 'org.ae', 'gov.ae', 'ac.ae', 'sch.ae', 'co.ae',
+    'com.eg', 'net.eg', 'org.eg', 'gov.eg', 'edu.eg', 'sci.eg',
+    'co.il', 'net.il', 'org.il', 'ac.il', 'gov.il', 'muni.il', 'idf.il', 'k12.il',
+    'com.tr', 'net.tr', 'org.tr', 'edu.tr', 'gov.tr', 'biz.tr', 'info.tr', 'tv.tr', 'gen.tr',
+    'co.za', 'net.za', 'org.za', 'gov.za', 'ac.za', 'web.za',
+    'com.ng', 'net.ng', 'org.ng', 'gov.ng', 'edu.ng', 'sch.ng',
+    'co.ke', 'or.ke', 'ne.ke', 'go.ke', 'ac.ke', 'sc.ke',
+    'com.br', 'net.br', 'org.br', 'edu.br', 'gov.br',
+    'com.mx', 'net.mx', 'org.mx', 'edu.mx', 'gob.mx',
+    'com.ar', 'net.ar', 'org.ar', 'edu.ar', 'gob.ar',
+    'com.co', 'net.co', 'org.co', 'edu.co', 'gov.co',
+    'com.es', 'nom.es', 'org.es', 'gob.es', 'edu.es',
+    'com.pl', 'net.pl', 'org.pl', 'edu.pl', 'gov.pl'
+  ]);
+
   function cleanDomain(input) {
     if (!input || typeof input !== 'string') return '';
     let str = input.trim().toLowerCase();
     str = str.replace(/^https?:\/\//i, '');
     str = str.split('/')[0].split('?')[0].split('#')[0].split(':')[0];
     str = str.replace(/^www\./i, '');
-    return str;
+    const parts = str.split('.');
+    if (parts.length <= 2) return str;
+    const lastTwo = parts.slice(-2).join('.');
+    if (TWO_PART_TLDS.has(lastTwo) && parts.length >= 3) {
+      return parts.slice(-3).join('.');
+    }
+    return parts.slice(-2).join('.');
   }
 
   /**
@@ -302,7 +344,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!hasActiveKey) {
       ahrefsKeysList.innerHTML = `
         <div style="font-size:11px;color:#94A3B8;font-style:italic;padding:6px 2px;">
-          No custom Ahrefs key active. DR scores automatically powered by free public endpoint. Paste your own token below for direct access.
+          No Ahrefs key active. Domain Rating (DR) is currently turned off. Paste your free token below to enable live DR scores.
         </div>
       `;
       updateKeyStatusPills();
@@ -334,7 +376,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     item.querySelector('#btnDiscontinueAhrefs')?.addEventListener('click', (e) => {
       e.stopPropagation();
-      const confirmed = window.confirm('Are you sure you want to disconnect your Ahrefs token? DR will fallback to free public endpoint.');
+      const confirmed = window.confirm('Are you sure you want to disconnect your Ahrefs token? You can re-enter it at any time.');
       if (!confirmed) return;
 
       userAhrefsKey = '';
@@ -436,7 +478,7 @@ document.addEventListener('DOMContentLoaded', () => {
       : null;
 
     if (drScoreDisplay) {
-      drScoreDisplay.textContent = dr !== null ? dr : '—';
+      drScoreDisplay.textContent = dr !== null ? dr : (data.dr?.discontinued ? 'Off' : '—');
     }
     if (drProgressFill) {
       drProgressFill.style.width = dr !== null ? `${Math.min(100, Math.max(0, dr))}%` : '0%';
@@ -467,22 +509,31 @@ document.addEventListener('DOMContentLoaded', () => {
     activeDomain = clean;
     if (currentDomainDisplay) currentDomainDisplay.textContent = clean;
 
+    let renderedFromCache = false;
     // 0ms INSTANT Cache check: If this domain was already queried, render immediately without waiting
     if (!forceRefresh) {
       try {
         const cacheKey = `cache_${clean}`;
         const stored = await chrome.storage.local.get(cacheKey);
-        if (stored && stored[cacheKey] && stored[cacheKey].data) {
-          renderDomainData(stored[cacheKey].data);
+        const cachedData = stored?.[cacheKey]?.data;
+        if (cachedData) {
+          renderDomainData(cachedData);
+          renderedFromCache = true;
           if (!/(?:^|\.)google\.[a-z.]+/i.test(clean)) {
             chrome.storage.local.set({ cerpspy_last_domain: clean }).catch(() => {});
           }
-          return;
+          const hasDr = !userAhrefsKey || isAhrefsDiscontinued || (cachedData.dr && cachedData.dr.success && typeof cachedData.dr.dr === 'number');
+          const hasAge = cachedData.age && cachedData.age.success && cachedData.age.age;
+          if (hasDr && hasAge) {
+            return;
+          }
         }
       } catch (_) {}
     }
 
-    showLoading();
+    if (!renderedFromCache) {
+      showLoading();
+    }
 
     const action = forceRefresh ? 'REFRESH_DOMAIN_DATA' : 'GET_DOMAIN_DATA';
     return new Promise((resolve) => {
@@ -490,7 +541,9 @@ document.addEventListener('DOMContentLoaded', () => {
         { action, domain: clean, context: 'popup' },
         (response) => {
           if (chrome.runtime.lastError) {
-            showError(chrome.runtime.lastError.message || 'Service worker connection error.');
+            if (!renderedFromCache) {
+              showError(chrome.runtime.lastError.message || 'Service worker connection error.');
+            }
             resolve();
             return;
           }
@@ -499,7 +552,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!/(?:^|\.)google\.[a-z.]+/i.test(clean)) {
               chrome.storage.local.set({ cerpspy_last_domain: clean }).catch(() => {});
             }
-          } else {
+          } else if (!renderedFromCache) {
             showError(response?.error || 'Failed to fetch domain authority.');
           }
           resolve();
@@ -544,6 +597,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       if (toggleSerpBadges) toggleSerpBadges.checked = s.serpBadgesEnabled !== false;
+      if (toggleSiteBadge) toggleSiteBadge.checked = s.siteBadgeEnabled !== false;
       if (toggleShowDR) toggleShowDR.checked = s.showDomainRating !== false;
       if (toggleShowDomainAge) toggleShowDomainAge.checked = s.showDomainAge !== false;
       if (toggleShowYoungBadge) toggleShowYoungBadge.checked = s.showYoungBadge !== false;
@@ -598,6 +652,7 @@ document.addEventListener('DOMContentLoaded', () => {
       kwNetwork: selectKwNetwork ? selectKwNetwork.value : 'google_search_and_partners',
 
       serpBadgesEnabled: toggleSerpBadges ? toggleSerpBadges.checked : true,
+      siteBadgeEnabled: toggleSiteBadge ? toggleSiteBadge.checked : true,
       showDomainRating: toggleShowDR ? toggleShowDR.checked : true,
       showDomainAge: toggleShowDomainAge ? toggleShowDomainAge.checked : true,
       showYoungBadge: toggleShowYoungBadge ? toggleShowYoungBadge.checked : true,
@@ -706,7 +761,7 @@ document.addEventListener('DOMContentLoaded', () => {
     toggleShowTrend, toggleAutoFetchKeywords,
     toggleShowExport, toggleShowPaa, toggleShowBookmark, toggleShowOpportunity,
     toggleShowIntent, toggleShowFilters,
-    toggleSerpBadges, toggleShowDR,
+    toggleSerpBadges, toggleSiteBadge, toggleShowDR,
     toggleShowDomainAge, toggleShowYoungBadge
   ];
   allToggles.forEach((el) => {
@@ -972,7 +1027,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!key || isAhrefsDiscontinued) {
         if (ahrefsTestResult) {
           ahrefsTestResult.style.display = 'inline-block';
-          ahrefsTestResult.textContent = 'DR works automatically via free public endpoint. Enter a token above to test custom access.';
+          ahrefsTestResult.textContent = 'Please add an Ahrefs token above first to test connection.';
           ahrefsTestResult.className = 'test-result-badge';
         }
         return;
@@ -1102,8 +1157,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // Listen for live domain metric completions (e.g. background RDAP or DR resolution)
+  chrome.runtime.onMessage.addListener((msg) => {
+    if (msg && msg.action === 'DOMAIN_DATA_UPDATED' && msg.domain && msg.data) {
+      if (cleanDomain(msg.domain) === activeDomain) {
+        renderDomainData(msg.data);
+      }
+    }
+  });
+
   // Initialize
-  loadSettings();
-  loadLiveAccountCredits();
-  detectCurrentTab();
+  loadSettings().then(() => {
+    detectCurrentTab();
+  });
 });

@@ -419,7 +419,17 @@
       "css": [
         "content/content.css"
       ],
-      "run_at": "document_idle"
+      "run_at": "document_end"
+    },
+    {
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ],
+      "js": [
+        "content/site-badge.js"
+      ],
+      "run_at": "document_start"
     }
   ],
   "web_accessible_resources": [
@@ -429,6 +439,7 @@
         "icons/*"
       ],
       "matches": [
+        "http://*/*",
         "https://*/*"
       ]
     }

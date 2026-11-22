@@ -48,50 +48,147 @@ async function fetchAhrefsDirect(cleanTarget, apiKey) {
 }
 
 /**
- * Fast public fallback to KWScanner DR endpoint when Ahrefs direct rate-limits or times out.
+ * Fast public fallback to KWScanner DR endpoint (supports single domain or batch).
  */
-async function fetchKWScannerDR(cleanTarget) {
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 4000);
+async function fetchKWScannerDR(cleanTarget, retries = 1) {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5500);
 
-    const response = await fetch('https://api.kwscanner.com/v1/public/tools/dr', {
-      method: 'POST',
-      signal: controller.signal,
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify({ domains: [cleanTarget] })
-    });
-    clearTimeout(timeout);
+      const response = await fetch('https://api.kwscanner.com/v1/public/tools/dr', {
+        method: 'POST',
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({ domains: [cleanTarget] })
+      });
+      clearTimeout(timeout);
 
-    if (!response.ok) return null;
-    const data = await response.json();
-    if (data && Array.isArray(data.ratings) && data.ratings.length > 0) {
-      const item = data.ratings[0];
-      if (item && typeof item.dr === 'number') {
-        const score = Math.round(item.dr * 10) / 10;
-        const tier = getDRTier(score);
-        return {
-          success: true,
-          domain: cleanTarget,
-          dr: score,
-          tier: tier.name,
-          tierBadge: tier.badge,
-          tierColor: tier.color,
-          tierDescription: tier.description,
-          source: 'Ahrefs DR (Verified)',
-          license: 'http://ahrefs.com/legal/domain-rating-license'
-        };
+      if (response.ok) {
+        const data = await response.json();
+        if (data && Array.isArray(data.ratings) && data.ratings.length > 0) {
+          const item = data.ratings[0];
+          if (item && typeof item.dr === 'number') {
+            const score = Math.round(item.dr * 10) / 10;
+            const tier = getDRTier(score);
+            return {
+              success: true,
+              domain: cleanTarget,
+              dr: score,
+              tier: tier.name,
+              tierBadge: tier.badge,
+              tierColor: tier.color,
+              tierDescription: tier.description,
+              source: 'Ahrefs DR (Verified)',
+              license: 'http://ahrefs.com/legal/domain-rating-license'
+            };
+          }
+        }
       }
+    } catch (e) {}
+    if (attempt < retries) {
+      await new Promise(r => setTimeout(r, 150));
     }
-  } catch (e) {}
+  }
   return null;
 }
 
 /**
- * Fetches Domain Rating from Ahrefs API with automatic retry and instant backup resolver.
+ * Resolves Domain Rating for multiple domains in a single HTTP batch request (~800ms for all SERP results)
+ * and registers in-flight promises so individual getDomainRating calls share the batch request concurrently with RDAP.
+ */
+function prefetchBatchDR(domains, customApiKey = null) {
+  const apiKey = (customApiKey && customApiKey.trim()) ? customApiKey.trim() : DEFAULT_AHREFS_KEY;
+  if (!apiKey || !Array.isArray(domains) || domains.length === 0) return Promise.resolve();
+
+  const uncached = [];
+  for (const raw of domains) {
+    if (!raw) continue;
+    const clean = String(raw).trim().toLowerCase().replace(/^https?:\/\//, '').split('/')[0];
+    if (clean && !drMemoryCache.has(clean) && !inFlightDrMap.has(clean) && !uncached.includes(clean)) {
+      uncached.push(clean);
+    }
+  }
+
+  if (uncached.length === 0) return Promise.resolve();
+  const batchTargets = uncached.slice(0, 25);
+
+  const batchLookupPromise = (async () => {
+    const resolvedMap = new Map();
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5500);
+
+      const response = await fetch('https://api.kwscanner.com/v1/public/tools/dr', {
+        method: 'POST',
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({ domains: batchTargets })
+      });
+      clearTimeout(timeout);
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data && Array.isArray(data.ratings)) {
+          for (const item of data.ratings) {
+            if (item && item.domain && typeof item.dr === 'number') {
+              const d = String(item.domain).trim().toLowerCase();
+              const score = Math.round(item.dr * 10) / 10;
+              const tier = getDRTier(score);
+              const resObj = {
+                success: true,
+                domain: d,
+                dr: score,
+                tier: tier.name,
+                tierBadge: tier.badge,
+                tierColor: tier.color,
+                tierDescription: tier.description,
+                source: 'Ahrefs DR (Verified)',
+                license: 'http://ahrefs.com/legal/domain-rating-license'
+              };
+              drMemoryCache.set(d, resObj);
+              resolvedMap.set(d, resObj);
+            }
+          }
+        }
+      }
+    } catch (_) {}
+    return resolvedMap;
+  })();
+
+  for (const target of batchTargets) {
+    const domainPromise = (async () => {
+      try {
+        const map = await batchLookupPromise;
+        if (map.has(target)) {
+          return map.get(target);
+        }
+        // Fallback for any individual domain not returned in batch
+        const single = await fetchKWScannerDR(target, 1);
+        if (single && single.success) {
+          drMemoryCache.set(target, single);
+          return single;
+        }
+        return { success: false, domain: target, error: 'Unable to resolve Domain Rating' };
+      } finally {
+        inFlightDrMap.delete(target);
+      }
+    })();
+    inFlightDrMap.set(target, domainPromise);
+  }
+
+  return batchLookupPromise;
+}
+
+/**
+ * Fetches Domain Rating from Ahrefs API with parallel racing against the instant backup resolver
+ * so rate-limits or slow handshakes never delay DR display.
  */
 async function getDomainRating(domain, customApiKey = null, retryCount = 0) {
   if (!domain) {
@@ -116,99 +213,56 @@ async function getDomainRating(domain, customApiKey = null, retryCount = 0) {
 
   const lookupPromise = (async () => {
     try {
-      let response = null;
+      const ahrefsAttempt = (async () => {
+        const response = await fetchAhrefsDirect(cleanTarget, apiKey);
+        if (!response.ok) {
+          throw new Error(`Ahrefs status ${response.status}`);
+        }
+        const data = await response.json();
+        if (data && data.domain_rating && typeof data.domain_rating.domain_rating !== 'undefined') {
+          const rawScore = data.domain_rating.domain_rating;
+          const score = Math.round(rawScore * 10) / 10;
+          const tier = getDRTier(score);
+          return {
+            success: true,
+            domain: cleanTarget,
+            dr: score,
+            tier: tier.name,
+            tierBadge: tier.badge,
+            tierColor: tier.color,
+            tierDescription: tier.description,
+            source: 'Ahrefs Free API',
+            license: data.domain_rating.license || 'http://ahrefs.com/legal/domain-rating-license'
+          };
+        }
+        throw new Error('Unexpected Ahrefs API response format');
+      })();
+
+      const kwAttempt = (async () => {
+        const backup = await fetchKWScannerDR(cleanTarget, 1);
+        if (backup && backup.success) return backup;
+        throw new Error('KWScanner DR backup unavailable');
+      })();
+
+      // Race both resolvers concurrently: whichever returns a valid DR first wins immediately!
+      let winner = null;
       try {
-        response = await fetchAhrefsDirect(cleanTarget, apiKey);
-      } catch (netErr) {
-        // Fallback to KWScanner DR immediately on network/timeout error
-        const backup = await fetchKWScannerDR(cleanTarget);
-        if (backup) {
-          drMemoryCache.set(cleanTarget, backup);
-          return backup;
-        }
-        throw netErr;
+        winner = await Promise.any([ahrefsAttempt, kwAttempt]);
+      } catch (_) {
+        winner = null;
       }
 
-      // If rate-limited (429) or non-200, fallback immediately to KWScanner DR (no sleep wait)
-      if (response.status === 429 || !response.ok) {
-        const backup = await fetchKWScannerDR(cleanTarget);
-        if (backup) {
-          drMemoryCache.set(cleanTarget, backup);
-          return backup;
-        }
-      }
-
-      if (response.status === 401 || response.status === 403) {
-        const backup = await fetchKWScannerDR(cleanTarget);
-        if (backup) {
-          drMemoryCache.set(cleanTarget, backup);
-          return backup;
-        }
-        return {
-          success: false,
-          domain: cleanTarget,
-          error: 'Ahrefs API unauthorized. Please verify your API key.'
-        };
-      }
-
-      if (response.status === 429) {
-        return {
-          success: false,
-          domain: cleanTarget,
-          error: 'Ahrefs API rate limit reached. Please wait a moment.'
-        };
-      }
-
-      if (!response.ok) {
-        return {
-          success: false,
-          domain: cleanTarget,
-          error: `Ahrefs API returned status ${response.status}`
-        };
-      }
-
-      const data = await response.json();
-      if (data && data.domain_rating && typeof data.domain_rating.domain_rating !== 'undefined') {
-        const rawScore = data.domain_rating.domain_rating;
-        const score = Math.round(rawScore * 10) / 10;
-        const tier = getDRTier(score);
-
-        const result = {
-          success: true,
-          domain: cleanTarget,
-          dr: score,
-          tier: tier.name,
-          tierBadge: tier.badge,
-          tierColor: tier.color,
-          tierDescription: tier.description,
-          source: 'Ahrefs Free API',
-          license: data.domain_rating.license || 'http://ahrefs.com/legal/domain-rating-license'
-        };
-        drMemoryCache.set(cleanTarget, result);
-        return result;
-      }
-
-      const backup = await fetchKWScannerDR(cleanTarget);
-      if (backup) {
-        drMemoryCache.set(cleanTarget, backup);
-        return backup;
+      if (winner && winner.success) {
+        drMemoryCache.set(cleanTarget, winner);
+        return winner;
       }
 
       return {
         success: false,
         domain: cleanTarget,
-        error: 'Unexpected Ahrefs API response format'
+        error: 'Unable to resolve Domain Rating at this moment'
       };
     } catch (err) {
-      const backup = await fetchKWScannerDR(cleanTarget);
-      if (backup) {
-        drMemoryCache.set(cleanTarget, backup);
-        return backup;
-      }
-
-      if (err.name === 'AbortError') {
-        return { success: false, domain: cleanTarget, error: 'Ahrefs request timed out' };
-      }
       return {
         success: false,
         domain: cleanTarget,
@@ -231,9 +285,10 @@ function clearDrCache() {
 if (typeof self !== 'undefined') {
   self.getDomainRating = getDomainRating;
   self.fetchKWScannerDR = fetchKWScannerDR;
+  self.prefetchBatchDR = prefetchBatchDR;
   self.getDRTier = getDRTier;
   self.clearDrCache = clearDrCache;
 }
 if (typeof module !== 'undefined') {
-  module.exports = { getDomainRating, fetchKWScannerDR, getDRTier, clearDrCache, DEFAULT_AHREFS_KEY };
+  module.exports = { getDomainRating, fetchKWScannerDR, prefetchBatchDR, getDRTier, clearDrCache, DEFAULT_AHREFS_KEY };
 }

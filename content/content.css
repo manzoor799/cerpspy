@@ -1268,6 +1268,10 @@
   box-shadow: 0 1px 3px rgba(64, 50, 201, 0.3) !important;
 }
 
+.cerpspy-kw-load-btn * {
+  pointer-events: none !important;
+}
+
 .cerpspy-kw-load-btn:hover {
   transform: translateY(-1px) !important;
   opacity: 0.92 !important;

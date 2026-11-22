@@ -43,6 +43,8 @@
   const contentKeywordCache = new Map();
   // Track in-flight keyword requests by cacheKey (Map prevents overwrites across concurrent calls)
   const inFlightKeywordRequests = new Map();
+  // Track keywords explicitly requested by the user during credit-saver mode
+  const userRequestedKeywords = new Set();
 
   /**
    * Sanitizes and cleans search queries before requesting Google Ads/KWScanner metrics.
@@ -1261,6 +1263,30 @@
       });
     }
 
+    // Credit Saver "Load Volume & CPC" Button (Instant load on single click)
+    const fetchBtn = strip.querySelector('#cerpspyBtnFetchKw');
+    if (fetchBtn && !fetchBtn.dataset.cerpspyBound) {
+      fetchBtn.dataset.cerpspyBound = 'true';
+      fetchBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const cleanKw = cleanKeywordForVolume(query);
+        if (cleanKw) {
+          userRequestedKeywords.add(cleanKw);
+        }
+        // Instant visual feedback: transition button to loading pulse immediately
+        strip.setAttribute('data-cerpspy-loading', cleanKw);
+        strip.innerHTML = `
+          ${showVolume ? '<span class="cerpspy-kw-item"><span class="cerpspy-kw-lbl">Volume:</span> <strong class="cerpspy-kw-val pulse">...</strong></span>' : ''}
+          ${showVolume && (showCpc || showTrend) ? '<span class="cerpspy-kw-sep">|</span>' : ''}
+          ${showCpc ? '<span class="cerpspy-kw-item"><span class="cerpspy-kw-lbl">CPC:</span> <strong class="cerpspy-kw-val pulse">...</strong></span>' : ''}
+          ${showCpc && showTrend ? '<span class="cerpspy-kw-sep">|</span>' : ''}
+          ${showTrend ? '<span class="cerpspy-kw-item"><span class="cerpspy-kw-lbl">Trend:</span> <strong class="cerpspy-kw-val pulse">...</strong></span>' : ''}
+        `;
+        renderSearchBarStrip(false);
+      });
+    }
+
     // Bookmark / Save button (1-Click Copy & Save Keyword)
     // Helper: copies keyword intel summary
     const handleBookmark = async (e) => {
@@ -1875,7 +1901,7 @@
    */
   function renderCompetitorRowsHtml(competitors) {
     return competitors.map(comp => {
-      const drVal = (comp.dr !== null && comp.dr !== undefined) ? comp.dr : (comp.da !== null && comp.da !== undefined ? `DA ${comp.da}` : '—');
+      const drVal = (comp.dr !== null && comp.dr !== undefined) ? comp.dr : '—';
       const drPill = `<span class="cerpspy-opp-mini-badge is-dr" title="Domain Authority Rating: ${drVal}">DR ${drVal}</span>`;
       const agePill = comp.ageFormatted
         ? `<span class="cerpspy-opp-mini-badge is-age" title="Domain Age: ${comp.ageFormatted}">Age ${comp.ageFormatted}</span>`
@@ -2144,7 +2170,7 @@
 
         const query = extractSearchQuery() || '';
         const rows = [
-          ['Rank', 'Domain', 'DR', 'DA', 'Age', 'Type', 'Search Query']
+          ['Rank', 'Domain', 'DR', 'Age', 'Type', 'Search Query']
         ];
 
         info.topResults.forEach(r => {
@@ -2153,7 +2179,6 @@
             r.rank,
             r.domain,
             r.dr !== null ? r.dr : '—',
-            r.da !== null ? r.da : '—',
             r.ageFormatted || '—',
             type,
             query
@@ -2264,7 +2289,7 @@
    * Runs in 0ms client-side with 0 API calls and 0 credits.
    */
   function applySerpCardFilter(filterType, topResults, isDrBelow20Fn) {
-    const isBelow20 = isDrBelow20Fn || ((r) => (typeof r.dr === 'number' && r.dr <= 20) || (typeof r.da === 'number' && r.da <= 20));
+    const isBelow20 = isDrBelow20Fn || ((r) => (typeof r.dr === 'number' && r.dr <= 20));
     const headings = Array.from(document.querySelectorAll('h3, div[role="heading"][aria-level="3"]')).filter(h => {
       const card = h.closest('.yuRUbf, .tF2Cxc, div.g, .g') || h.parentElement;
       return card && !isExcludedElement(h) && !isExcludedElement(card);
@@ -2316,7 +2341,7 @@
 
     const filterLabel = filterType === 'low-dr' ? 'DR ≤ 20' : 'Young Websites';
     const matchCount = filterType === 'low-dr'
-      ? (topResults ? topResults.filter(r => (r.dr !== null && r.dr <= 20) || (r.da !== null && r.da <= 20)).length : 1)
+      ? (topResults ? topResults.filter(r => r.dr !== null && r.dr <= 20).length : 1)
       : (topResults ? topResults.filter(r => r.isYoung).length : 1);
 
     banner.innerHTML = `
@@ -2399,11 +2424,6 @@
         if (typeof data.dr.dr === 'number') dr = Math.round(data.dr.dr);
         else if (typeof data.dr === 'number') dr = Math.round(data.dr);
       }
-      let da = null;
-      if (data && data.da !== undefined && data.da !== null) {
-        if (typeof data.da.da === 'number') da = Math.round(data.da.da);
-        else if (typeof data.da === 'number') da = Math.round(data.da);
-      }
 
       const isYoung = Boolean(data?.isYoung || (data?.age?.age && ((data.age.age.totalMonths || 0) < 12)));
       const ageFormatted = data?.ageFormatted || (data?.age?.age ? formatDomainAgeShort(data.age.age) : null);
@@ -2413,7 +2433,6 @@
         rank: topResults.length + 1,
         domain,
         dr,
-        da,
         isYoung,
         ageFormatted,
         regDate,
@@ -2423,10 +2442,9 @@
 
     if (topResults.length === 0) return;
 
-    // DR <= 20 filter: purely by domain rating (DR <= 20 or DA <= 20) across all top 10
+    // DR <= 20 filter: purely by domain rating (DR <= 20) across all top 10
     const isDrBelow20 = (r) => {
       if (typeof r.dr === 'number' && !isNaN(r.dr)) return r.dr <= 20;
-      if (typeof r.da === 'number' && !isNaN(r.da)) return r.da <= 20;
       return false;
     };
     const lowDrTop10 = topResults.slice(0, 10).filter(isDrBelow20);
@@ -2455,7 +2473,7 @@
     if (lowDrTop10.length > 0) {
       pillType = 'is-opportunity';
       pillText = lowDrTop10.length === 1
-        ? `#${lowDrTop10[0].rank} DR ${lowDrTop10[0].dr !== null ? lowDrTop10[0].dr : (lowDrTop10[0].da !== null ? lowDrTop10[0].da : '≤ 20')}`
+        ? `#${lowDrTop10[0].rank} DR ${lowDrTop10[0].dr !== null ? lowDrTop10[0].dr : '≤ 20'}`
         : `${lowDrTop10.length} Sites DR ≤ 20`;
       pillTooltip = `${lowDrTop10.length} websites in the Top 10 are below DR 20. Click to view rankable opportunities.`;
       popoverBadgeTitle = 'High Opportunity: Rankable';
@@ -2652,21 +2670,20 @@
     strip.setAttribute('data-cerpspy-query', cleanKw);
     applyThemeClass(strip);
 
+    const isUserRequested = userRequestedKeywords.has(cleanKw);
+    const isInFlight = inFlightKeywordRequests.has(cacheKey);
+    const isLoading = (strip.getAttribute('data-cerpspy-loading') === cleanKw);
+
     // CREDIT SAVER MODE: If user disabled auto-fetch and this query is not in cache,
     // display an on-demand "Load Volume & CPC" chip so credits are never wasted on casual searches.
-    if (!autoFetchKeywords && !forceRefresh) {
+    // Shield against Google AI Overview mutations while request is loading or once user clicked.
+    if (!autoFetchKeywords && !forceRefresh && !isUserRequested && !isInFlight && !isLoading) {
       strip.removeAttribute('data-cerpspy-loading');
       strip.setAttribute('data-cerpspy-query', cleanKw);
       strip.innerHTML = buildCreditSaverStripHtml(query);
       updateSerpOpportunityPill();
       alignStripWithSearchInput(strip);
       adjustGoogleLayoutForStrip(true);
-
-      strip.querySelector('#cerpspyBtnFetchKw')?.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        renderSearchBarStrip(true);
-      });
       attachSearchBarInteractions(strip, null, query);
       return;
     }
@@ -2867,6 +2884,12 @@
             DR: <strong style="opacity: 0.65; font-size: 11px;">Off</strong>
           </span>
         `);
+      } else if (data?.drPending && drVal === null) {
+        items.push(`
+          <span class="cerpspy-badge-pill cerpspy-badge-dr pulse" title="Loading DR for ${domain}...">
+            DR: ...
+          </span>
+        `);
       } else {
         const drText = drVal !== null ? drVal : '—';
         items.push(`
@@ -2984,7 +3007,6 @@
         populateBadge(wrapper, domain, {
           domain,
           dr: { dr: null },
-          da: { da: null },
           age: null
         });
       }
@@ -2993,14 +3015,13 @@
       populateBadge(wrapper, domain, {
         domain,
         dr: { dr: null },
-        da: { da: null },
         age: null
       });
     }
   }
 
   /**
-   * Scans Google SERP headings and injects DR, DA, and Spam Score pills right beside the domain name.
+   * Scans Google SERP headings and injects DR and Domain Age pills right beside the domain name.
    * Employs a 2-stage pipeline:
    * 1. 0ms instant display from storage & memory cache
    * 2. Single batch network query for any remaining uncached domains
@@ -3144,8 +3165,8 @@
         populateBadge(wrapper, domain, entry);
       } else {
         if (entry) {
-          // Pre-populate what we have (Age, DA) while fetching fresh DR
-          populateBadge(wrapper, domain, entry);
+          // Pre-populate what we have (Age) while fetching fresh DR
+          populateBadge(wrapper, domain, { ...entry, drPending: showDomainRating && !isAhrefsDiscontinued });
         }
         uncachedDomains.add(domain);
       }
@@ -3232,7 +3253,7 @@
       document.getElementById('kw-sidebar-container')?.remove();
       renderSearchBarStrip();
       processSearchResults();
-    }, 220);
+    }, 80);
   }
 
   async function init() {
@@ -3334,6 +3355,7 @@
         contentKeywordCache.clear();
         contentDomainCache.clear();
         inFlightKeywordRequests.clear();
+        userRequestedKeywords.clear();
         // Remove existing badge containers and injected flags so everything cleanly re-renders
         document.querySelectorAll('.cerpspy-serp-badge-container').forEach(el => el.remove());
         document.querySelectorAll(`[${INJECTED_FLAG}]`).forEach(el => el.removeAttribute(INJECTED_FLAG));
@@ -3345,14 +3367,26 @@
           try { sendResponse({ received: true }); } catch (_) {}
         }
       } else if (msg && msg.action === 'DOMAIN_DATA_UPDATED' && msg.domain && msg.data) {
-        contentDomainCache.set(msg.domain, msg.data);
+        const prev = contentDomainCache.get(msg.domain) || {};
+        const merged = {
+          ...prev,
+          ...msg.data,
+          dr: (msg.data.dr && msg.data.dr.success) ? msg.data.dr : (prev.dr?.success ? prev.dr : msg.data.dr),
+          age: (msg.data.age && msg.data.age.success) ? msg.data.age : (prev.age?.success ? prev.age : msg.data.age),
+          ageFormatted: msg.data.ageFormatted || prev.ageFormatted
+        };
+        contentDomainCache.set(msg.domain, merged);
         const wrappers = document.querySelectorAll(`[data-cerpspy-domain="${msg.domain}"]`);
-        wrappers.forEach(w => populateBadge(w, msg.domain, msg.data));
+        wrappers.forEach(w => populateBadge(w, msg.domain, merged));
         updateSerpOpportunityPill();
       } else if (msg && msg.action === 'TRIGGER_SERP_EXPORT') {
         const query = extractSearchQuery() || '';
         const cleanKw = cleanKeywordForVolume(query);
-        const kd = contentKeywordCache.get(cleanKw) || null;
+        const rawCountry = detectSearchCountry();
+        const country = normalizeKWLocation(rawCountry);
+        const network = kwNetwork === 'google_search_and_partners' ? 'google_search_and_partners' : 'google_search';
+        const cacheKey = `kw_${country}_${network}_${cleanKw}`;
+        const kd = contentKeywordCache.get(cacheKey) || contentKeywordCache.get(cleanKw) || null;
         exportSerpToCsv(query, kd);
         if (typeof sendResponse === 'function') {
           sendResponse({ success: true, count: document.querySelectorAll('h3').length });

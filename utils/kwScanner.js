@@ -410,20 +410,22 @@ async function getKWScannerKeywordData(keyword, locationCode = 'global', customA
     const data = await response.json();
     let item = (data && Array.isArray(data.results) && data.results.length > 0) ? data.results[0] : null;
 
-    // Automatic global fallback if localized country returned zero or negligible (<=10) volume
-    if ((!item || (typeof item.volume === 'number' && item.volume <= 10)) && locCode !== 'global') {
+    // Automatic global fallback only if localized country returned no result object
+    if (!item && locCode !== 'global') {
       try {
-        const globalRes = await fetch(`${KWSCANNER_API_BASE}/v1/lookups/volume`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${apiKey}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            keywords: [cleanKeyword],
-            locationCode: 'global',
-            network: actualNetwork
-          })
+        const globalRes = await kwLimiter.run(async () => {
+          return fetch(`${KWSCANNER_API_BASE}/v1/lookups/volume`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${apiKey}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              keywords: [cleanKeyword],
+              locationCode: 'global',
+              network: actualNetwork
+            })
+          });
         });
         if (globalRes.ok) {
           const gData = await globalRes.json();

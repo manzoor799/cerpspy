@@ -39,18 +39,23 @@ cerpspy is a clean, lightning-fast SEO extension designed for digital marketers,
 • Instantly detects ranking opportunities where low-authority domains (DR ≤ 20) or young sites rank on Page 1.
 • 1-Click Export to Google Sheets & Excel: Copy all top 10 SERP competitor metrics in clean tabular format.
 
-5. DEDICATED DOMAIN ANALYZER
+5. ON-WEBSITE FLOATING AUTHORITY DOCK
+• Displays a subtle, ultra-lightweight right-edge authority tab on any website you visit showing live `[DR]` and `[Age]`.
+• Hover to expand the domain header, exact registration date, one-click refresh, or close button.
+• Instant 0ms synchronization with Google SERP badges—opening any result from Google displays its metrics immediately.
+
+6. DEDICATED DOMAIN ANALYZER POPUP
 • Open the extension popup on any webpage or search any domain to view ranking authority and domain heritage.
 • Visual authority progress meters with descriptive tier classifications and SEO lifecycle analysis.
 • Live KWScanner credits balance display and API connection status indicators.
 
-6. 30-DAY INSTANT LOCAL CACHING
+7. 30-DAY INSTANT LOCAL CACHING
 • Fast 0ms repeat viewing and massive API credit savings.
 • Configurable cache TTL: 30 Days (Recommended), 7 Days, 24 Hours, or Always Live.
 
-7. PRIVACY FIRST & EFFICIENT
+8. PRIVACY FIRST & EFFICIENT
 • No browsing history or personal data is collected or tracked.
-• Zero background network requests when you are not searching.
+• Zero background network requests when you are not actively viewing a domain or searching.
 
 ---
 
@@ -58,6 +63,7 @@ cerpspy is a clean, lightning-fast SEO extension designed for digital marketers,
 
 | Permission | Specific Plain-English Justification |
 |---|---|
-| `tabs` | Required to read the URL of your active Google Search tab to display metrics and notify open search tabs when display settings are updated. |
-| `storage` | Required to store user display toggles and cache lookup results locally for fast 0ms repeat viewing without burning API credits. |
-| `activeTab` | Required to analyze the current domain upon user interaction with the popup. |
+| `tabs` | Required to read the URL of your active tab to display domain metrics and broadcast live setting or metric updates across open tabs. |
+| `storage` | Required to store user display toggles and cache domain/keyword lookup results locally for fast 0ms repeat viewing without burning API credits. |
+| `activeTab` | Required to analyze the current website domain upon user interaction with the extension popup. |
+| `host_permissions` (`<all_urls>`) | Required to render the on-website floating DR & Age dock on visited websites, inject SERP intelligence across regional Google Search domains, and query public RDAP/WHOIS registries, Ahrefs DR, and KWScanner API endpoints from the background service worker. |

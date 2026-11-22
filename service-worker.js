@@ -14,6 +14,26 @@ importScripts(
   'utils/seoInsights.js'
 );
 
+// Helper to broadcast live domain intelligence updates to SERP and website tabs
+async function broadcastDomainUpdate(domain, data) {
+  if (!domain || !data) return;
+  try {
+    const tabs = await chrome.tabs.query({}).catch(() => []);
+    // Always read the freshest merged entry from memory cache after async tabs.query
+    // so an earlier microtask never broadcasts stale data over a newly-resolved DR
+    const freshest = domainMemoryCache.get(domain) || data;
+    for (const tab of tabs) {
+      if (tab.id && tab.url && /^https?:\/\//i.test(tab.url)) {
+        chrome.tabs.sendMessage(tab.id, {
+          action: 'DOMAIN_DATA_UPDATED',
+          domain,
+          data: freshest
+        }).catch(() => {});
+      }
+    }
+  } catch (_) {}
+}
+
 // Register global background resolution listener from domainAge.js
 if (typeof setOnDomainAgeResolved === 'function') {
   setOnDomainAgeResolved(async (domain, bgAge) => {
@@ -23,9 +43,13 @@ if (typeof setOnDomainAgeResolved === 'function') {
     const bgInsights = evaluateSEOInsights(bgAge);
     const bgYoung = bgInsights?.isYoung ?? ((bgAge.age.totalMonths !== undefined ? bgAge.age.totalMonths : (bgAge.age.years * 12 + (bgAge.age.months || 0))) < 12);
     const bgAgeFormatted = formatDomainAgeShort(bgAge.age);
+    const isDrStillInFlight = inFlightRequests.has(domain) && (!existing.dr || !existing.dr.success);
+
     const updated = {
       ...existing,
       domain,
+      dr: existing.dr || null,
+      drPending: isDrStillInFlight,
       age: bgAge,
       insights: bgInsights,
       isYoung: bgYoung,
@@ -35,34 +59,27 @@ if (typeof setOnDomainAgeResolved === 'function') {
       timestamp: Date.now()
     };
     domainMemoryCache.set(domain, updated);
-    await chrome.storage.local.set({
-      [cacheKey]: {
-        timestamp: Date.now(),
-        data: updated
-      }
-    }).catch(() => {});
 
-    // Broadcast live update to Google SERP tabs
-    try {
-      const tabs = await chrome.tabs.query({}).catch(() => []);
-      for (const tab of tabs) {
-        if (tab.id && tab.url && tab.url.includes('google.') && tab.url.includes('/search')) {
-          chrome.tabs.sendMessage(tab.id, {
-            action: 'DOMAIN_DATA_UPDATED',
-            domain,
-            data: updated
-          }).catch(() => {});
+    // Only write to persistent storage if DR is not currently in-flight, or merge with latest after storage write
+    if (!isDrStillInFlight) {
+      await chrome.storage.local.set({
+        [cacheKey]: {
+          timestamp: Date.now(),
+          data: domainMemoryCache.get(domain) || updated
         }
-      }
-    } catch (_) {}
+      }).catch(() => {});
+    }
+
+    await broadcastDomainUpdate(domain, updated);
   });
 }
 
 const DEFAULT_SETTINGS = {
   kwScannerApiKey: '',
   ahrefsApiKey: '',
-  // SERP Badges
+  // SERP & On-Website Badges
   serpBadgesEnabled: true,
+  siteBadgeEnabled: true,     // Right-edge floating dock on opened websites
   showDomainRating: true,     // Ahrefs DR
   showDomainAge: true,        // Domain Age Pill
   showYoungBadge: true,       // Young Website Badge (< 1 year)
@@ -235,30 +252,6 @@ function extractRootDomain(input) {
 }
 
 /**
- * Preserves domain cache entries for maximum speed and credit savings.
- */
-async function purgeIncompleteAgeCache() {
-  return 0;
-}
-
-/**
- * Purges ephemeral keyword search cache.
- */
-async function purgeSearchCache(reason = 'search') {
-  try {
-    const all = await chrome.storage.local.get(null);
-    const staleKeys = Object.keys(all).filter(k => k.startsWith('kw_'));
-    if (staleKeys.length > 0) {
-      await chrome.storage.local.remove(staleKeys);
-      console.log(`[cerpspy] Purged ${staleKeys.length} search keyword cache entries (${reason}).`);
-    }
-    return staleKeys.length;
-  } catch (err) {
-    return 0;
-  }
-}
-
-/**
  * Scans cache and purges any entries with 0 search volume or failed lookups.
  */
 async function purgeZeroVolumeCache() {
@@ -370,7 +363,22 @@ async function fetchDomainIntelligence(rawDomain, forceRefresh = false, context 
       } else if (cachedPayload?.dr?.success && cachedPayload.dr.dr !== null && cachedPayload.dr.dr !== undefined) {
         drPromise = Promise.resolve(cachedPayload.dr);
       } else if (settings.showDomainRating !== false) {
-        drPromise = getDomainRating(domain, settings.ahrefsApiKey);
+        drPromise = getDomainRating(domain, settings.ahrefsApiKey).then((drRes) => {
+          // Immediately merge DR into memory cache as soon as it resolves so any concurrent
+          // or subsequent age broadcast always includes the resolved DR!
+          const cur = domainMemoryCache.get(domain) || cachedPayload || { domain };
+          const partialWithDr = {
+            ...cur,
+            domain,
+            dr: drRes,
+            drPending: false,
+            agePending: wantsAge && (!cur.age || !cur.age.success),
+            timestamp: Date.now()
+          };
+          domainMemoryCache.set(domain, partialWithDr);
+          broadcastDomainUpdate(domain, partialWithDr);
+          return drRes;
+        });
       } else {
         drPromise = Promise.resolve(null);
       }
@@ -391,10 +399,14 @@ async function fetchDomainIntelligence(rawDomain, forceRefresh = false, context 
       }
 
       // Parallel execution: DR and Fast Age
-      const [drResult, ageResult] = await Promise.all([
+      const [drResult, rawAgeResult] = await Promise.all([
         drPromise,
         fastAgePromise
       ]);
+
+      const memExisting = domainMemoryCache.get(domain) || cachedPayload || {};
+      const ageResult = (rawAgeResult && rawAgeResult.success) ? rawAgeResult : (memExisting.age?.success ? memExisting.age : rawAgeResult);
+      const finalDr = (drResult && drResult.success) ? drResult : (memExisting.dr?.success ? memExisting.dr : drResult);
 
       // Evaluate SEO lifecycle stage and domain age properties
       const insights = (ageResult && ageResult.success) ? evaluateSEOInsights(ageResult) : null;
@@ -403,7 +415,8 @@ async function fetchDomainIntelligence(rawDomain, forceRefresh = false, context 
 
       const payload = {
         domain,
-        dr: drResult,
+        dr: finalDr,
+        drPending: false,
         age: ageResult,
         insights,
         isYoung,
@@ -418,7 +431,7 @@ async function fetchDomainIntelligence(rawDomain, forceRefresh = false, context 
       domainMemoryCache.set(domain, payload);
 
       // Persist to storage cache if DR or Age succeeded
-      const hasAnyValidData = (drResult && drResult.success) || (ageResult && ageResult.success);
+      const hasAnyValidData = (finalDr && finalDr.success) || (ageResult && ageResult.success);
       if (!isLiveMode && hasAnyValidData) {
         await chrome.storage.local.set({
           [cacheKey]: {
@@ -427,6 +440,9 @@ async function fetchDomainIntelligence(rawDomain, forceRefresh = false, context 
           }
         }).catch(() => {});
       }
+
+      // Broadcast complete payload to all open website & SERP tabs
+      broadcastDomainUpdate(domain, payload);
 
       // If Domain Age was still resolving when the fast ceiling fired, continue in background and broadcast!
       if (wantsAge && (!ageResult || ageResult.pending === true) && agePromise) {
@@ -439,6 +455,8 @@ async function fetchDomainIntelligence(rawDomain, forceRefresh = false, context 
             const updated = {
               ...existing,
               domain,
+              dr: existing.dr || payload.dr,
+              drPending: false,
               age: bgAge,
               insights: bgInsights,
               isYoung: bgYoung,
@@ -454,19 +472,7 @@ async function fetchDomainIntelligence(rawDomain, forceRefresh = false, context 
               }
             }).catch(() => {});
 
-            // Broadcast live update to Google SERP tabs (any regional Google domain e.g. .com, .es, .co.uk)
-            try {
-              const tabs = await chrome.tabs.query({}).catch(() => []);
-              for (const tab of tabs) {
-                if (tab.id && tab.url && tab.url.includes('google.') && tab.url.includes('/search')) {
-                  chrome.tabs.sendMessage(tab.id, {
-                    action: 'DOMAIN_DATA_UPDATED',
-                    domain,
-                    data: updated
-                  }).catch(() => {});
-                }
-              }
-            } catch (_) {}
+            await broadcastDomainUpdate(domain, updated);
           }
         }).catch(() => {});
       }
@@ -516,8 +522,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           const force = message.forceRefresh === true;
           const context = message.context || 'serp';
 
-          // Process unique domains in parallel with fast return
-          const unique = [...new Set(rawDomains.filter(Boolean))];
+          // Process unique root domains in parallel with single-request batch DR prefetch
+          const unique = [...new Set(rawDomains.map(d => extractRootDomain(d)).filter(Boolean))];
+          const settings = await getSettings();
+          if (settings.showDomainRating !== false && !settings.ahrefsDiscontinued && settings.ahrefsApiKey && typeof prefetchBatchDR === 'function') {
+            prefetchBatchDR(unique, settings.ahrefsApiKey);
+          }
           const results = await Promise.all(
             unique.map(d => fetchDomainIntelligence(d, force, context))
           );
@@ -789,11 +799,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             }
           }
 
-          // Broadcast to active search tabs for live update using safe regex check
+          // Broadcast to active search and website tabs for live update
           try {
             const tabs = await chrome.tabs.query({});
             for (const tab of tabs) {
-              if (tab.id && tab.url && /https?:\/\/(www\.)?google\.[a-z.]+\/search/i.test(tab.url)) {
+              if (tab.id && tab.url && /^https?:\/\//i.test(tab.url)) {
                 chrome.tabs.sendMessage(tab.id, { action: 'SETTINGS_UPDATED', settings: updated }, () => {
                   if (chrome.runtime.lastError) {
                     // Non-fatal if tab has not injected script yet
